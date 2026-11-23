@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
+import { Editor } from './editor/Editor'
+import { EditorStore } from './editor/store'
+import { EditorContext } from './editor/useEditor'
 import { createObject, newDoc } from './model/factory'
 import type { LabelDoc, LabelObject } from './model/types'
 import { ConnectPanel } from './ui/ConnectPanel'
 import { PrintDialog } from './ui/PrintDialog'
 
-/** Sample 30 × 12 mm label until the editor arrives (M3). */
+/** Starting 30 × 12 mm label (fits a D110_M) until labels can be saved (M5). */
 const sampleLabel = (): LabelDoc => {
   const doc = newDoc({ widthMm: 30, heightMm: 12 })
   doc.objects.push(
@@ -31,40 +34,40 @@ const sampleLabel = (): LabelDoc => {
 }
 
 export default function App() {
-  const [doc] = useState(sampleLabel)
+  const [store] = useState(() => new EditorStore(sampleLabel()))
+  const { history } = useSyncExternalStore(store.subscribe, store.getState)
   const [printOpen, setPrintOpen] = useState(false)
 
   return (
-    <main>
-      <h1>labelcraft</h1>
-      <p>Design labels and print them from your browser. Work in progress.</p>
+    <EditorContext value={store}>
+      <main>
+        <h1>labelcraft</h1>
+        <p>Design labels and print them from your browser. Work in progress.</p>
 
-      <ConnectPanel />
+        <Editor />
 
-      <section className="panel" aria-labelledby="label-title">
-        <h2 id="label-title">Label</h2>
         <p>
-          Sample {doc.label.widthMm} × {doc.label.heightMm} mm label. The editor
-          comes next.
+          <button
+            type="button"
+            className="primary"
+            onClick={() => setPrintOpen(true)}
+          >
+            Print…
+          </button>
         </p>
-        <button
-          type="button"
-          className="primary"
-          onClick={() => setPrintOpen(true)}
-        >
-          Print…
-        </button>
-      </section>
 
-      <PrintDialog
-        doc={doc}
-        open={printOpen}
-        onClose={() => setPrintOpen(false)}
-      />
+        <ConnectPanel />
 
-      <p className="notice">
-        Independent project, not affiliated with or endorsed by NIIMBOT.
-      </p>
-    </main>
+        <PrintDialog
+          doc={history.present}
+          open={printOpen}
+          onClose={() => setPrintOpen(false)}
+        />
+
+        <p className="notice">
+          Independent project, not affiliated with or endorsed by NIIMBOT.
+        </p>
+      </main>
+    </EditorContext>
   )
 }

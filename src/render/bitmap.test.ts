@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   blackRatio,
+  inkPixels,
   ditherPixels,
   isMonochrome,
   luminance,
@@ -57,6 +58,14 @@ describe('1-bit conversion', () => {
     ditherPixels(px)
     expect([px.data[0], px.data[4], px.data[8], px.data[12]]).toEqual([
       0, 255, 0, 255,
+    ])
+  })
+
+  it('turns dark pixels into opaque ink and the rest transparent', () => {
+    const px = grey([0, 100, 200, 255])
+    inkPixels(px)
+    expect(Array.from(px.data)).toEqual([
+      0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0,
     ])
   })
 

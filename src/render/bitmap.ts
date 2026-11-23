@@ -47,6 +47,22 @@ export const thresholdPixels = (
   }
 }
 
+/**
+ * In place: luminance below `threshold` becomes opaque black ("ink"), the rest
+ * fully transparent, so objects can be layered without white boxes.
+ */
+export const inkPixels = (px: Pixels, threshold = DEFAULT_THRESHOLD): void => {
+  const { data } = px
+  for (let i = 0; i < data.length; i += 4) {
+    const ink =
+      luminance(data[i], data[i + 1], data[i + 2], data[i + 3]) < threshold
+    data[i] = 0
+    data[i + 1] = 0
+    data[i + 2] = 0
+    data[i + 3] = ink ? 255 : 0
+  }
+}
+
 /** In place: Floyd–Steinberg dithering to black and white (R6.AC2). */
 export const ditherPixels = (px: Pixels): void => {
   const { data, width, height } = px
