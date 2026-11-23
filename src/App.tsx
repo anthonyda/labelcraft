@@ -1,9 +1,11 @@
-import { useState, useSyncExternalStore } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { Editor } from './editor/Editor'
 import { EditorStore } from './editor/store'
 import { EditorContext } from './editor/useEditor'
 import { createObject, newDoc } from './model/factory'
 import type { LabelDoc, LabelObject } from './model/types'
+import { usePrinter } from './printer/usePrinter'
+import { useAutosave } from './storage/useAutosave'
 import { ConnectPanel } from './ui/ConnectPanel'
 import { PrintDialog } from './ui/PrintDialog'
 
@@ -37,6 +39,15 @@ export default function App() {
   const [store] = useState(() => new EditorStore(sampleLabel()))
   const { history } = useSyncExternalStore(store.subscribe, store.getState)
   const [printOpen, setPrintOpen] = useState(false)
+  const autosave = useAutosave(store)
+  const printerDpi = usePrinter().model?.dpi
+
+  // R3.AC2: use the connected printer's resolution.
+  useEffect(() => {
+    if (printerDpi && printerDpi !== store.doc.label.dpi) {
+      store.setLabel({ dpi: printerDpi })
+    }
+  }, [printerDpi, store])
 
   return (
     <EditorContext value={store}>
@@ -44,7 +55,7 @@ export default function App() {
         <h1>labelcraft</h1>
         <p>Design labels and print them from your browser. Work in progress.</p>
 
-        <Editor />
+        <Editor autosave={autosave} />
 
         <p>
           <button

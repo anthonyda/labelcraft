@@ -142,4 +142,81 @@ describe('editor store', () => {
     s.redo()
     expect(ids(s)).toContain(copy)
   })
+
+  // T4.1
+  it('adds a new object centred and selects it', () => {
+    const s = store(rect('a'))
+    const id = s.addObject('qr')
+    expect(s.doc.objects).toHaveLength(2)
+    expect(s.selection).toEqual([id])
+    const qr = s.doc.objects[1]
+    expect(qr.type).toBe('qr')
+    expect(qr.x + qr.width / 2).toBeCloseTo(25)
+  })
+
+  // R9.AC2: typing in a field is one undo step.
+  it('merges consecutive edits with the same key into one undo step', () => {
+    const s = store(rect('a'))
+    s.updateObject('a', { x: 1 }, 'a:x')
+    s.updateObject('a', { x: 12 }, 'a:x')
+    s.updateObject('a', { x: 123 }, 'a:x')
+    s.updateObject('a', { y: 4 }, 'a:y')
+    expect(s.doc.objects[0]).toMatchObject({ x: 123, y: 4 })
+    s.undo()
+    expect(s.doc.objects[0]).toMatchObject({ x: 123, y: 0 })
+    s.undo()
+    expect(s.doc.objects[0]).toMatchObject({ x: 0, y: 0 })
+  })
+
+  it('does not merge across an undo', () => {
+    const s = store(rect('a'))
+    s.updateObject('a', { x: 1 }, 'a:x')
+    s.undo()
+    s.updateObject('a', { x: 2 }, 'a:x')
+    s.undo()
+    expect(s.doc.objects[0].x).toBe(0)
+  })
+
+  // R3
+  it('changes the label setup keeping objects', () => {
+    const s = store(rect('a', 3, 3))
+    s.setLabel({ widthMm: 40, dpi: 300 })
+    expect(s.doc.label).toMatchObject({ widthMm: 40, heightMm: 30, dpi: 300 })
+    expect(s.doc.objects[0]).toMatchObject({ x: 3, y: 3 })
+  })
+
+  // T5: saved state tracking
+  it('tracks unsaved changes against the last save', () => {
+    const s = store(rect('a'))
+    expect(s.isDirty).toBe(false)
+    s.addObject('rect')
+    expect(s.isDirty).toBe(true)
+    s.markSaved('id1', 'Shelf A')
+    expect(s.isDirty).toBe(false)
+    expect(s.getState().file).toMatchObject({ labelId: 'id1', name: 'Shelf A' })
+    s.undo()
+    expect(s.isDirty).toBe(true)
+    s.redo()
+    expect(s.isDirty).toBe(false)
+  })
+
+  it('loads a document with file info, clearing history', () => {
+    const s = store(rect('a'))
+    s.addObject('rect')
+    s.load(newDoc(), { labelId: 'x', name: 'X' })
+    expect(s.doc.objects).toHaveLength(0)
+    expect(s.canUndo).toBe(false)
+    expect(s.isDirty).toBe(false)
+    s.load(newDoc(), { name: 'imported' }, true)
+    expect(s.isDirty).toBe(true)
+  })
+
+  it('forgets a deleted label but keeps the document', () => {
+    const s = store(rect('a'))
+    s.markSaved('id1', 'A')
+    s.forgetLabel('id1')
+    expect(s.getState().file.labelId).toBeUndefined()
+    expect(s.isDirty).toBe(true)
+    expect(s.doc.objects).toHaveLength(1)
+  })
 })

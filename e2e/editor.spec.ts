@@ -14,6 +14,7 @@ const EMPTY_ON_LABEL = { x: 40, y: 94 }
 /** Screen position of a point given in label printer pixels. */
 const screen = async (page: Page, p: { x: number; y: number }) => {
   const canvas = page.getByTestId('editor-canvas')
+  await canvas.scrollIntoViewIfNeeded()
   const box = (await canvas.boundingBox())!
   const scale = Number(await canvas.getAttribute('data-scale'))
   const origin = Number(await canvas.getAttribute('data-origin'))

@@ -1,7 +1,12 @@
 /** Editor: toolbar, canvas, keyboard shortcuts and status line (M3). */
 import { useEffect, useState } from 'react'
 import { pxToMm } from '../model/units'
+import type { AutosaveStatus } from '../storage/useAutosave'
+import { AddMenu } from './AddMenu'
 import { EditorCanvas } from './EditorCanvas'
+import { FileMenu } from './FileMenu'
+import { imageObjectFromFile, isImageFile } from './images'
+import { PropertiesPanel } from './PropertiesPanel'
 import { commandForKey, isTypingTarget, type Command } from './shortcuts'
 import type { EditorStore } from './store'
 import { useEditorState, useEditorStore } from './useEditor'
@@ -47,6 +52,7 @@ function Toolbar({
 
   return (
     <div className="toolbar" role="toolbar" aria-label="Editor tools">
+      <AddMenu />
       <div className="group" role="group" aria-label="History">
         <button
           type="button"
@@ -177,7 +183,7 @@ function StatusLine() {
   )
 }
 
-export function Editor() {
+export function Editor({ autosave }: { autosave: AutosaveStatus }) {
   const store = useEditorStore()
   const [zoom, setZoom] = useState(1)
 
@@ -190,11 +196,26 @@ export function Editor() {
       e.preventDefault()
       run(store, command)
     }
+    // T4.3 / R6.AC1: paste an image from the clipboard.
+    const onPaste = (e: ClipboardEvent) => {
+      if (isTypingTarget(e.target)) return
+      if (document.querySelector('dialog:modal')) return
+      const file = Array.from(e.clipboardData?.files ?? []).find(isImageFile)
+      if (!file) return
+      e.preventDefault()
+      imageObjectFromFile(file, store.doc.label)
+        .then((o) => store.addObject(o))
+        .catch(() => undefined)
+    }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    window.addEventListener('paste', onPaste)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('paste', onPaste)
+    }
   }, [store])
 
-  const doc = store.doc
+  const doc = useEditorState().history.present
   return (
     <section className="panel editor" aria-labelledby="editor-title">
       <h2 id="editor-title">
@@ -204,9 +225,15 @@ export function Editor() {
           {fmt(pxToMm(1, doc.label.dpi) * 1000)} µm per dot
         </small>
       </h2>
+      <FileMenu autosave={autosave} />
       <Toolbar zoom={zoom} setZoom={setZoom} />
-      <EditorCanvas zoom={zoom} />
-      <StatusLine />
+      <div className="editor-body">
+        <div className="editor-main">
+          <EditorCanvas zoom={zoom} />
+          <StatusLine />
+        </div>
+        <PropertiesPanel />
+      </div>
     </section>
   )
 }

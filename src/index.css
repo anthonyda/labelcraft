@@ -191,3 +191,167 @@ main:has(.editor) {
   border-radius: 0.375rem;
   touch-action: none;
 }
+
+.editor-canvas {
+  position: relative;
+}
+
+/* In-place text editing over the canvas */
+.text-editor {
+  position: absolute;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 1px dashed var(--accent);
+  outline: none;
+  background: #fff;
+  color: #000;
+  resize: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  transform-origin: center;
+}
+
+/* Editor body: canvas + properties side by side on wide screens */
+.editor-body {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (width >= 900px) {
+  .editor-body {
+    grid-template-columns: 1fr 17rem;
+    align-items: start;
+  }
+}
+
+.editor-main {
+  min-width: 0;
+}
+
+.properties .field-group {
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem 0.75rem;
+  margin: 0 0 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.properties legend {
+  font-weight: 600;
+  padding: 0 0.25rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.field input:not([type='checkbox']),
+.field select,
+.field textarea {
+  min-height: 44px;
+  font: inherit;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.field.check {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 44px;
+}
+
+.field-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.field-row > .field {
+  flex: 1 1 5rem;
+}
+
+.unit {
+  opacity: 0.7;
+}
+
+/* Generic modal dialogs (same look as the print dialog) */
+.modal {
+  width: min(32rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.modal h1 {
+  margin-top: 0;
+  font-size: 1.25rem;
+}
+
+.modal form {
+  display: grid;
+  gap: 1rem;
+}
+
+button.danger {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+/* Labels menu */
+.file-menu {
+  margin-bottom: 0.5rem;
+}
+
+.file-name {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  align-items: baseline;
+  margin: 0 0 0.5rem;
+}
+
+.autosave {
+  font-size: 0.875rem;
+  opacity: 0.7;
+}
+
+.file-menu .group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.saved-labels {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.saved-labels li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+}
+
+.saved-labels img {
+  width: 5rem;
+  height: auto;
+  background: #fff;
+  image-rendering: pixelated;
+  outline: 1px solid var(--border);
+}
+
+.saved-name {
+  display: grid;
+  flex: 1 1 8rem;
+}

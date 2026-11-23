@@ -7,6 +7,7 @@ import {
   commit,
   createHistory,
   redo,
+  replacePresent,
   undo,
 } from './history'
 import { setLabelSetup } from './ops'
@@ -46,6 +47,15 @@ describe('history', () => {
     const h = createHistory(docW(1))
     expect(undo(h)).toBe(h)
     expect(redo(h)).toBe(h)
+  })
+
+  it('replaces the present without adding an undo step', () => {
+    let h = createHistory(docW(1))
+    h = commit(h, docW(2))
+    h = replacePresent(h, docW(3))
+    expect(h.present.label.widthMm).toBe(3)
+    h = undo(h)
+    expect(h.present.label.widthMm).toBe(1)
   })
 
   it('ignores commits that do not change the document', () => {

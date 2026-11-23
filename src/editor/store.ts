@@ -3,13 +3,14 @@
  * internal clipboard. Plain TypeScript with subscribe/getState so React reads
  * it through useSyncExternalStore and tests run without a UI.
  */
-import { newId } from '../model/factory'
+import { createObject, newId } from '../model/factory'
 import {
   canRedo,
   canUndo,
   commit,
   createHistory,
   redo,
+  replacePresent,
   undo,
   type History,
 } from '../model/history'
@@ -18,11 +19,17 @@ import {
   deleteObjects,
   duplicateObjects,
   reorderObjects,
+  setLabelSetup,
   updateObject,
   type AlignEdge,
   type ReorderDirection,
 } from '../model/ops'
-import type { LabelDoc, LabelObject } from '../model/types'
+import type {
+  LabelDoc,
+  LabelObject,
+  LabelSetup,
+  ObjectType,
+} from '../model/types'
 import { pxToMm } from '../model/units'
 
 export type EditorState = {
@@ -32,6 +39,15 @@ export type EditorState = {
   clipboard: LabelObject[]
   /** How many times the clipboard has been pasted (offsets each paste). */
   pasteCount: number
+  file: FileInfo
+}
+
+/** Which named label is being edited, and the state it was last saved in. */
+export type FileInfo = {
+  labelId?: string
+  name?: string
+  /** Document as last saved/opened; differs from the present when edited. */
+  savedDoc?: LabelDoc
 }
 
 export type ObjectPatch = { id: string; patch: Partial<LabelObject> }
@@ -41,6 +57,8 @@ export const COPY_OFFSET_MM = 2
 
 export class EditorStore {
   private state: EditorState
+  /** Key of the last merged edit; consecutive edits with it share one undo step. */
+  private mergeKey?: string
   private listeners = new Set<() => void>()
 
   constructor(doc: LabelDoc) {
@@ -49,6 +67,7 @@ export class EditorStore {
       selection: [],
       clipboard: [],
       pasteCount: 0,
+      file: { savedDoc: doc },
     }
   }
 
@@ -86,17 +105,84 @@ export class EditorStore {
     return ids.filter((id) => existing.has(id))
   }
 
-  /** Record a new document state (one undo step). */
-  apply(doc: LabelDoc, selection = this.state.selection): void {
+  /**
+   * Record a new document state (one undo step). With `mergeKey`, consecutive
+   * edits with the same key (e.g. typing in one field) share a single step.
+   */
+  apply(
+    doc: LabelDoc,
+    selection = this.state.selection,
+    mergeKey?: string,
+  ): void {
+    const merge = mergeKey !== undefined && mergeKey === this.mergeKey
+    this.mergeKey = mergeKey
     this.set({
-      history: commit(this.state.history, doc),
+      history: merge
+        ? replacePresent(this.state.history, doc)
+        : commit(this.state.history, doc),
       selection: this.validSelection(doc, selection),
     })
   }
 
-  /** Replace the whole document, clearing history (e.g. opening a file). */
-  load(doc: LabelDoc): void {
-    this.set({ history: createHistory(doc), selection: [] })
+  /** Add a new object of `type` (or a prepared one), centred, and select it. */
+  addObject(typeOrObject: ObjectType | LabelObject): string {
+    const o =
+      typeof typeOrObject === 'string'
+        ? createObject(typeOrObject, this.doc.label)
+        : typeOrObject
+    this.apply({ ...this.doc, objects: [...this.doc.objects, o] }, [o.id])
+    return o.id
+  }
+
+  /** Edit one object's properties (R9.AC2); repeated edits of a field merge. */
+  updateObject(
+    id: string,
+    patch: Partial<LabelObject>,
+    mergeKey?: string,
+  ): void {
+    this.apply(
+      updateObject(this.doc, id, patch),
+      this.state.selection,
+      mergeKey,
+    )
+  }
+
+  /** Label size / dpi (R3); objects are kept unchanged (R3.AC4). */
+  setLabel(label: Partial<LabelSetup>, mergeKey?: string): void {
+    this.apply(setLabelSetup(this.doc, label), this.state.selection, mergeKey)
+  }
+
+  /** True when the label has changes not saved as a named label. */
+  get isDirty(): boolean {
+    return this.state.history.present !== this.state.file.savedDoc
+  }
+
+  /**
+   * Replace the whole document, clearing history (new, open, import, restore).
+   * `dirty` marks it as not saved under its name yet.
+   */
+  load(
+    doc: LabelDoc,
+    file: { labelId?: string; name?: string } = {},
+    dirty = false,
+  ): void {
+    this.mergeKey = undefined
+    this.set({
+      history: createHistory(doc),
+      selection: [],
+      file: { ...file, savedDoc: dirty ? undefined : doc },
+    })
+  }
+
+  /** The present document was saved as the named label `labelId`. */
+  markSaved(labelId: string, name: string): void {
+    this.set({ file: { labelId, name, savedDoc: this.doc } })
+  }
+
+  /** The named label was deleted: keep editing, but it is no longer saved. */
+  forgetLabel(labelId: string): void {
+    if (this.state.file.labelId !== labelId) return
+    this.set({ file: { name: this.state.file.name } })
   }
 
   select(ids: string[]): void {
@@ -117,6 +203,7 @@ export class EditorStore {
   }
 
   undo(): void {
+    this.mergeKey = undefined
     const history = undo(this.state.history)
     this.set({
       history,
@@ -125,6 +212,7 @@ export class EditorStore {
   }
 
   redo(): void {
+    this.mergeKey = undefined
     const history = redo(this.state.history)
     this.set({
       history,

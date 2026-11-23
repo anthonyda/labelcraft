@@ -7,8 +7,8 @@ import type Konva from 'konva'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Image, Layer, Rect, Stage, Transformer } from 'react-konva'
 import { boundingBox } from '../model/ops'
-import type { LabelObject } from '../model/types'
-import { labelSizePx, mmToPx, pxToMm } from '../model/units'
+import type { LabelObject, TextObject } from '../model/types'
+import { labelSizePx, mmToPx, ptToPx, pxToMm } from '../model/units'
 import { objectPixelBox } from '../render/renderObject'
 import type { ObjectPatch } from './store'
 import { useEditorState, useEditorStore, useObjectBitmap } from './useEditor'
@@ -23,15 +23,19 @@ type Band = { x1: number; y1: number; x2: number; y2: number }
 function ObjectNode({
   o,
   dpi,
+  hidden,
   onPointerDown,
   onDragEnd,
   onTransformEnd,
+  onEdit,
 }: {
   o: LabelObject
   dpi: number
+  hidden: boolean
   onPointerDown: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void
   onDragEnd: () => void
   onTransformEnd: () => void
+  onEdit: () => void
 }) {
   const bitmap = useObjectBitmap(o, dpi)
   const box = objectPixelBox(o, dpi)
@@ -47,11 +51,77 @@ function ObjectNode({
       offsetX={box.width / 2}
       offsetY={box.height / 2}
       rotation={o.rotation}
+      opacity={hidden ? 0 : 1}
       draggable
       onMouseDown={onPointerDown}
       onTouchStart={onPointerDown}
       onDragEnd={onDragEnd}
       onTransformEnd={onTransformEnd}
+      onDblClick={onEdit}
+      onDblTap={onEdit}
+    />
+  )
+}
+
+/**
+ * In-place text editing (T4.2, R5.AC1): a native text field over the text
+ * object, so the device keyboard works normally. Enter or leaving the field
+ * saves, Shift+Enter adds a line, Esc cancels.
+ */
+function TextEditor({
+  o,
+  dpi,
+  scale,
+  onDone,
+}: {
+  o: TextObject
+  dpi: number
+  scale: number
+  onDone: (text?: string) => void
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  const done = useRef(false)
+  const box = objectPixelBox(o, dpi)
+  const finish = (text?: string) => {
+    if (done.current) return
+    done.current = true
+    onDone(text)
+  }
+  useEffect(() => {
+    ref.current?.focus()
+    ref.current?.select()
+  }, [])
+  return (
+    <textarea
+      ref={ref}
+      className="text-editor"
+      aria-label="Edit text"
+      defaultValue={o.text}
+      spellCheck={false}
+      style={{
+        left: CANVAS_PADDING + box.x * scale,
+        top: CANVAS_PADDING + box.y * scale,
+        width: box.width * scale,
+        height: box.height * scale,
+        transform: o.rotation ? `rotate(${o.rotation}deg)` : undefined,
+        fontFamily: o.fontFamily,
+        fontSize: ptToPx(o.fontSize, dpi) * scale,
+        fontWeight: o.bold ? 'bold' : 'normal',
+        fontStyle: o.italic ? 'italic' : 'normal',
+        textDecoration: o.underline ? 'underline' : 'none',
+        textAlign: o.align,
+        lineHeight: o.lineHeight,
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          finish()
+        } else if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault()
+          finish(e.currentTarget.value)
+        }
+      }}
+      onBlur={(e) => finish(e.currentTarget.value)}
     />
   )
 }
@@ -68,6 +138,10 @@ export function EditorCanvas({ zoom }: { zoom: number }) {
   const trRef = useRef<Konva.Transformer>(null)
   const [containerWidth, setContainerWidth] = useState(600)
   const [band, setBand] = useState<Band>()
+  const [editingId, setEditingId] = useState<string>()
+  const editing = doc.objects.find(
+    (o): o is TextObject => o.id === editingId && o.type === 'text',
+  )
 
   useLayoutEffect(() => {
     const el = wrapperRef.current
@@ -98,11 +172,12 @@ export function EditorCanvas({ zoom }: { zoom: number }) {
     const stage = stageRef.current
     if (!tr || !stage) return
     const nodes = selection
+      .filter((id) => id !== editingId)
       .map((id) => stage.findOne(`#${CSS.escape(id)}`))
       .filter((n): n is Konva.Node => !!n)
     tr.nodes(nodes)
     tr.getLayer()?.batchDraw()
-  }, [selection, doc])
+  }, [selection, doc, editingId])
 
   /** Write the current node geometry of the selection back to the model. */
   const commitSelection = () => {
@@ -236,9 +311,15 @@ export function EditorCanvas({ zoom }: { zoom: number }) {
               key={o.id}
               o={o}
               dpi={dpi}
+              hidden={o.id === editingId}
               onPointerDown={onObjectDown(o.id)}
               onDragEnd={commitOnce}
               onTransformEnd={commitOnce}
+              onEdit={() => {
+                if (o.type !== 'text') return
+                store.select([o.id])
+                setEditingId(o.id)
+              }}
             />
           ))}
           <Transformer
@@ -271,6 +352,20 @@ export function EditorCanvas({ zoom }: { zoom: number }) {
           )}
         </Layer>
       </Stage>
+      {editing && (
+        <TextEditor
+          key={editing.id}
+          o={editing}
+          dpi={dpi}
+          scale={scale}
+          onDone={(text) => {
+            setEditingId(undefined)
+            if (text !== undefined && text !== editing.text) {
+              store.updateObject(editing.id, { text })
+            }
+          }}
+        />
+      )}
     </div>
   )
 }

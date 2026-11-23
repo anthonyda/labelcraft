@@ -7,14 +7,14 @@ import {
 
 export const toJson = (doc: LabelDoc): string => JSON.stringify(doc, null, 2)
 
-/** Parse a label file (R10.AC3). Throws an Error with a user-readable message. */
-export const fromJson = (json: string): LabelDoc => {
-  let data: unknown
-  try {
-    data = JSON.parse(json)
-  } catch {
-    throw new Error('The file is not valid JSON.')
-  }
+const isFiniteNumber = (v: unknown): v is number =>
+  typeof v === 'number' && Number.isFinite(v)
+
+/**
+ * Check that parsed data is a label document. Used for imported files and
+ * for data read back from browser storage. Throws a user-readable Error.
+ */
+export const parseDoc = (data: unknown): LabelDoc => {
   if (typeof data !== 'object' || data === null) {
     throw new Error('The file is not a labelcraft label.')
   }
@@ -24,9 +24,13 @@ export const fromJson = (json: string): LabelDoc => {
       `Unsupported label file version ${String(d.version)} (expected ${DOC_VERSION}).`,
     )
   }
+  const label = d.label as Record<string, unknown> | null
   if (
-    typeof d.label !== 'object' ||
-    d.label === null ||
+    typeof label !== 'object' ||
+    label === null ||
+    !isFiniteNumber(label.widthMm) ||
+    !isFiniteNumber(label.heightMm) ||
+    !isFiniteNumber(label.dpi) ||
     !Array.isArray(d.objects)
   ) {
     throw new Error('The file is not a labelcraft label.')
@@ -39,4 +43,15 @@ export const fromJson = (json: string): LabelDoc => {
     }
   }
   return data as LabelDoc
+}
+
+/** Parse a label file (R10.AC3). Throws an Error with a user-readable message. */
+export const fromJson = (json: string): LabelDoc => {
+  let data: unknown
+  try {
+    data = JSON.parse(json)
+  } catch {
+    throw new Error('The file is not valid JSON.')
+  }
+  return parseDoc(data)
 }

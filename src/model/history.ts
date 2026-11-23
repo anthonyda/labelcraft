@@ -28,6 +28,13 @@ export const commit = (h: History, doc: LabelDoc): History => {
   }
 }
 
+/**
+ * Replace the present state without a new undo step (e.g. while typing in a
+ * field, so a whole edit undoes at once). Clears the redo stack.
+ */
+export const replacePresent = (h: History, doc: LabelDoc): History =>
+  doc === h.present ? h : { past: h.past, present: doc, future: [] }
+
 export const undo = (h: History): History => {
   if (!canUndo(h)) return h
   return {
