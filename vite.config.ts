@@ -1,0 +1,12 @@
+/// <reference types="vitest/config" />
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+
+// Relative base so the site works from the GitHub Pages sub-path (spec C6).
+export default defineConfig({
+  base: './',
+  plugins: [react()],
+  test: {
+    include: ['src/**/*.test.{ts,tsx}'],
+  },
+})
