@@ -7,6 +7,16 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   base: './',
   plugins: [react()],
+  // Pre-bundle so browser tests don't trigger a mid-run reload.
+  optimizeDeps: {
+    include: [
+      '@mmote/niimbluelib',
+      'konva',
+      'jsbarcode',
+      'qrcode-generator',
+      '@zxing/library',
+    ],
+  },
   test: {
     projects: [
       {
