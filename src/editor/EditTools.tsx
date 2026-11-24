@@ -26,13 +26,38 @@ export function EditTools({
 
   return (
     <>
-      <div className="group" role="group" aria-label="History">
-        {button('Undo', 'undo', () => store.undo(), !store.canUndo)}
-        {button('Redo', 'redo', () => store.redo(), !store.canRedo)}
-      </div>
-      <div className="group" role="group" aria-label="Selection">
-        {button('Duplicate', 'duplicate', () => store.duplicateSelection())}
-        {button('Delete', 'trash', () => store.deleteSelection())}
+      {/* History, selection and zoom share one row. */}
+      <div className="group-row">
+        <div className="group" role="group" aria-label="History">
+          {button('Undo', 'undo', () => store.undo(), !store.canUndo)}
+          {button('Redo', 'redo', () => store.redo(), !store.canRedo)}
+        </div>
+        <div className="group" role="group" aria-label="Selection">
+          {button('Duplicate', 'duplicate', () => store.duplicateSelection())}
+          {button('Delete', 'trash', () => store.deleteSelection())}
+        </div>
+        <div className="group" role="group" aria-label="Zoom">
+          <button
+            type="button"
+            aria-label="Zoom out"
+            onClick={() => setZoom(zoomStep(zoom, -1))}
+            disabled={zoom <= ZOOM_MIN + EPS}
+          >
+            <Icon name="zoomOut" />
+          </button>
+          <output aria-label="Zoom level">{Math.round(zoom * 100)}%</output>
+          <button
+            type="button"
+            aria-label="Zoom in"
+            onClick={() => setZoom(zoomStep(zoom, 1))}
+            disabled={zoom >= ZOOM_MAX - EPS}
+          >
+            <Icon name="zoomIn" />
+          </button>
+          <Button icon="fit" onClick={() => setZoom(1)}>
+            Fit
+          </Button>
+        </div>
       </div>
       <div className="group" role="group" aria-label="Arrange">
         {button('To front', 'toFront', () => store.reorderSelection('front'))}
@@ -57,28 +82,6 @@ export function EditTools({
         {button('Align bottom', 'alignBottom', () =>
           store.alignSelection('bottom'),
         )}
-      </div>
-      <div className="group" role="group" aria-label="Zoom">
-        <button
-          type="button"
-          aria-label="Zoom out"
-          onClick={() => setZoom(zoomStep(zoom, -1))}
-          disabled={zoom <= ZOOM_MIN + EPS}
-        >
-          <Icon name="zoomOut" />
-        </button>
-        <output aria-label="Zoom level">{Math.round(zoom * 100)}%</output>
-        <button
-          type="button"
-          aria-label="Zoom in"
-          onClick={() => setZoom(zoomStep(zoom, 1))}
-          disabled={zoom >= ZOOM_MAX - EPS}
-        >
-          <Icon name="zoomIn" />
-        </button>
-        <Button icon="fit" onClick={() => setZoom(1)}>
-          Fit
-        </Button>
       </div>
     </>
   )
