@@ -37,7 +37,24 @@ const AUTOSAVE_TEXT: Record<AutosaveStatus, string> = {
 
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e))
 
-export function FileMenu({ autosave }: { autosave: AutosaveStatus }) {
+/** Label name, unsaved state and auto-save status (shown in the header). */
+export function FileStatus({ autosave }: { autosave: AutosaveStatus }) {
+  const store = useEditorStore()
+  const { file } = useEditorState()
+  return (
+    <p className="file-name">
+      <strong data-testid="label-name">{file.name ?? 'Untitled'}</strong>
+      {store.isDirty && file.labelId && (
+        <span className="unsaved">unsaved changes</span>
+      )}
+      <span className="autosave" role="status" data-testid="autosave">
+        {AUTOSAVE_TEXT[autosave]}
+      </span>
+    </p>
+  )
+}
+
+export function FileMenu() {
   const store = useEditorStore()
   const { file } = useEditorState()
   const [pending, setPending] = useState<Pending>()
@@ -45,7 +62,6 @@ export function FileMenu({ autosave }: { autosave: AutosaveStatus }) {
   const [name, setName] = useState('')
   const [confirmDelete, setConfirmDelete] = useState<string>()
   const importRef = useRef<HTMLInputElement>(null)
-  const dirty = store.isDirty
 
   const close = () => {
     setPending(undefined)
@@ -131,14 +147,7 @@ export function FileMenu({ autosave }: { autosave: AutosaveStatus }) {
     )
 
   return (
-    <div className="file-menu">
-      <p className="file-name">
-        <strong data-testid="label-name">{file.name ?? 'Untitled'}</strong>
-        {dirty && file.labelId && <span> · unsaved changes</span>}
-        <span className="autosave" role="status" data-testid="autosave">
-          {AUTOSAVE_TEXT[autosave]}
-        </span>
-      </p>
+    <>
       <div className="group" role="group" aria-label="Labels">
         <button
           type="button"
@@ -320,6 +329,6 @@ export function FileMenu({ autosave }: { autosave: AutosaveStatus }) {
           </>
         )}
       </Modal>
-    </div>
+    </>
   )
 }

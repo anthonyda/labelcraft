@@ -24,9 +24,7 @@ export function ConnectPanel() {
   const connected = state.status === 'connected' || state.status === 'printing'
 
   return (
-    <section className="panel" aria-labelledby="printer-title">
-      <h2 id="printer-title">Printer</h2>
-
+    <div className="connect-panel">
       {!canPrintToHardware(caps) && (
         <p className="warning" role="note">
           This browser can't reach real printers. Use Chrome, Edge or Opera on a
@@ -92,6 +90,6 @@ export function ConnectPanel() {
           Connect
         </button>
       )}
-    </section>
+    </div>
   )
 }

@@ -6,12 +6,19 @@ test('prints to the emulated D110_M and shows matching output', async ({
 }) => {
   await page.goto('./')
 
-  await page.getByLabel(/Emulated D110_M/).check()
-  await page.getByRole('button', { name: 'Connect' }).click()
-  await expect(page.getByText('Connected to')).toContainText('Emulated D110_M')
-  await expect(page.getByText('Connected to')).toContainText('D110_M')
-  // R16.AC4: clearly labelled as emulated
-  await expect(page.locator('.status .badge')).toHaveText('Emulated')
+  await page.getByRole('button', { name: /^Printer:/ }).click()
+  const printer = page.getByRole('dialog', { name: 'Printer' })
+  await printer.getByLabel(/Emulated D110_M/).check()
+  await printer.getByRole('button', { name: 'Connect' }).click()
+  await expect(printer.getByText('Connected to')).toContainText(
+    'Emulated D110_M',
+  )
+  // R16.AC4: clearly labelled as emulated, in the dialog and the header
+  await expect(printer.locator('.badge')).toHaveText('Emulated')
+  await printer.getByRole('button', { name: 'Done' }).click()
+  await expect(
+    page.getByRole('button', { name: /^Printer: D110_M/ }),
+  ).toContainText('Emulated')
 
   await page.getByRole('button', { name: 'Print…' }).click()
   const dialog = page.getByRole('dialog', { name: 'Print' })
@@ -52,8 +59,13 @@ test('prints to the emulated D110_M and shows matching output', async ({
 
   await dialog.getByRole('button', { name: 'Close' }).click()
   await expect(dialog).toBeHidden()
-  await page.getByRole('button', { name: 'Disconnect' }).click()
-  await expect(page.getByText('Not connected.')).toBeVisible()
+  await page.getByRole('button', { name: /^Printer:/ }).click()
+  await printer.getByRole('button', { name: 'Disconnect' }).click()
+  await expect(printer.getByText('Not connected.')).toBeVisible()
+  await printer.getByRole('button', { name: 'Done' }).click()
+  await expect(
+    page.getByRole('button', { name: 'Printer: Not connected' }),
+  ).toBeVisible()
 })
 
 // R11.AC1: print stays disabled while disconnected.

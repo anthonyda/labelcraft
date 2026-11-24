@@ -1,4 +1,11 @@
 import { expect, test, type Page } from '@playwright/test'
+import {
+  clickAt,
+  connectEmulator,
+  openPanel,
+  screen,
+  status,
+} from './helpers.ts'
 
 /*
  * Editor core (M3: T3.1–T3.4, R4). The start label is 30 × 12 mm at 203 dpi
@@ -11,30 +18,7 @@ const QR = { x: 192, y: 48 }
 // Below the objects, away from the selection handles
 const EMPTY_ON_LABEL = { x: 40, y: 94 }
 
-/** Screen position of a point given in label printer pixels. */
-const screen = async (page: Page, p: { x: number; y: number }) => {
-  const canvas = page.getByTestId('editor-canvas')
-  await canvas.scrollIntoViewIfNeeded()
-  const box = (await canvas.boundingBox())!
-  const scale = Number(await canvas.getAttribute('data-scale'))
-  const origin = Number(await canvas.getAttribute('data-origin'))
-  return {
-    x: box.x + origin + p.x * scale,
-    y: box.y + origin + p.y * scale,
-    scale,
-  }
-}
-
-const click = async (
-  page: Page,
-  p: { x: number; y: number },
-  shift = false,
-) => {
-  const s = await screen(page, p)
-  if (shift) await page.keyboard.down('Shift')
-  await page.mouse.click(s.x, s.y)
-  if (shift) await page.keyboard.up('Shift')
-}
+const click = clickAt
 
 const drag = async (
   page: Page,
@@ -47,8 +31,6 @@ const drag = async (
   await page.mouse.move(from.x + by.x, from.y + by.y, { steps: 5 })
   await page.mouse.up()
 }
-
-const status = (page: Page) => page.getByTestId('editor-status')
 
 test.beforeEach(async ({ page }) => {
   await page.goto('./')
@@ -129,6 +111,7 @@ test('keyboard: nudge, delete, undo/redo, duplicate, copy/paste', async ({
 test('toolbar: align, duplicate, delete, disabled without selection', async ({
   page,
 }) => {
+  await openPanel(page, 'Edit')
   const tools = page.getByRole('toolbar', { name: 'Editor tools' })
   await expect(tools.getByRole('button', { name: 'Delete' })).toBeDisabled()
 
@@ -148,6 +131,7 @@ test('toolbar: align, duplicate, delete, disabled without selection', async ({
 // R4.AC1: zoom
 test('zooms in, out and back to fit', async ({ page }) => {
   const canvas = page.getByTestId('editor-canvas')
+  await openPanel(page, 'Edit')
   const fit = Number(await canvas.getAttribute('data-scale'))
   await page.getByRole('button', { name: 'Zoom in' }).click()
   await expect(page.getByLabel('Zoom level')).toHaveText('150%')
@@ -163,9 +147,7 @@ test('zooms in, out and back to fit', async ({ page }) => {
 test('prints the edited label', async ({ page }) => {
   await click(page, TEXT)
   await page.keyboard.press('Delete')
-  await page.getByLabel(/Emulated D110_M/).check()
-  await page.getByRole('button', { name: 'Connect' }).click()
-  await expect(page.getByText('Connected to')).toBeVisible()
+  await connectEmulator(page)
   await page.getByRole('button', { name: 'Print…' }).click()
   const dialog = page.getByRole('dialog', { name: 'Print' })
   await dialog.getByRole('button', { name: 'Print', exact: true }).click()

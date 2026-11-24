@@ -1,16 +1,19 @@
 import { readFile } from 'node:fs/promises'
 import { expect, test, type Page } from '@playwright/test'
+import { openPanel } from './helpers.ts'
 
 /* Save / load (M5: T5.1–T5.3, R10). Start label: 30 × 12 mm, 2 objects. */
 
 const status = (page: Page) => page.getByTestId('editor-status')
 const labelName = (page: Page) => page.getByTestId('label-name')
 const labels = (page: Page) => page.getByRole('group', { name: 'Labels' })
-const addRect = (page: Page) =>
-  page
+const addRect = async (page: Page) => {
+  await openPanel(page, 'Add')
+  await page
     .getByRole('group', { name: 'Add' })
     .getByRole('button', { name: '+ Rectangle' })
     .click()
+}
 
 /** Wait until the latest change has been auto-saved. */
 const waitSaved = async (page: Page) => {
@@ -18,6 +21,7 @@ const waitSaved = async (page: Page) => {
 }
 
 const download = async (page: Page, button: string) => {
+  await openPanel(page, 'Labels')
   const [file] = await Promise.all([
     page.waitForEvent('download'),
     labels(page).getByRole('button', { name: button, exact: true }).click(),
@@ -46,6 +50,7 @@ test('auto-saves and restores the label after a reload', async ({ page }) => {
 // T5.2 / R10.AC2
 test('saves, reopens and deletes named labels', async ({ page }) => {
   // Save as a new named label
+  await openPanel(page, 'Labels')
   await labels(page).getByRole('button', { name: 'Save', exact: true }).click()
   const saveDialog = page.getByRole('dialog', { name: 'Save label as' })
   await saveDialog.getByLabel('Name').fill('Shelf A')
@@ -56,16 +61,19 @@ test('saves, reopens and deletes named labels', async ({ page }) => {
   // Change it, then Save overwrites without asking for a name
   await addRect(page)
   await expect(page.getByText('unsaved changes')).toBeVisible()
+  await openPanel(page, 'Labels')
   await labels(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.getByText('unsaved changes')).toBeHidden()
 
   // New label, then edit it so it has unsaved changes
+  await openPanel(page, 'Labels')
   await labels(page).getByRole('button', { name: 'New' }).click()
   await expect(labelName(page)).toHaveText('Untitled')
   await expect(status(page)).toContainText('0 objects')
   await addRect(page)
 
   // Open the saved label: asks before discarding the unsaved one
+  await openPanel(page, 'Labels')
   await labels(page).getByRole('button', { name: 'Open…' }).click()
   const openDialog = page.getByRole('dialog', { name: 'Open label' })
   const item = openDialog.getByRole('listitem').filter({ hasText: 'Shelf A' })
@@ -77,6 +85,7 @@ test('saves, reopens and deletes named labels', async ({ page }) => {
   await expect(status(page)).toContainText('3 objects')
 
   // Delete it (two steps)
+  await openPanel(page, 'Labels')
   await labels(page).getByRole('button', { name: 'Open…' }).click()
   await item.getByRole('button', { name: 'Delete', exact: true }).click()
   await item.getByRole('button', { name: 'Delete "Shelf A"' }).click()
@@ -88,6 +97,7 @@ test('keeps the current label when discarding is declined', async ({
   page,
 }) => {
   await addRect(page)
+  await openPanel(page, 'Labels')
   await labels(page).getByRole('button', { name: 'New' }).click()
   const confirm = page.getByRole('dialog', { name: 'Discard changes?' })
   await confirm.getByRole('button', { name: 'Keep editing' }).click()
@@ -105,6 +115,7 @@ test('exports and imports a label file', async ({ page }) => {
 
   doc.label.widthMm = 40
   doc.objects.pop()
+  await openPanel(page, 'Labels') // import errors show in the Labels panel
   await page.getByTestId('import-file').setInputFiles({
     name: 'Bin 7.labelcraft.json',
     mimeType: 'application/json',

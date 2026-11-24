@@ -1,4 +1,12 @@
 import { expect, test, type Page } from '@playwright/test'
+import {
+  clickAt,
+  connectEmulator,
+  inkIn,
+  openPanel,
+  screen,
+  status,
+} from './helpers.ts'
 
 /*
  * Objects and properties (M4: T4.1–T4.5). Start label: 30 × 12 mm at 203 dpi
@@ -8,46 +16,8 @@ import { expect, test, type Page } from '@playwright/test'
 const TEXT = { x: 80, y: 48 }
 const QR = { x: 192, y: 48 }
 
-const status = (page: Page) => page.getByTestId('editor-status')
 const props = (page: Page) =>
   page.getByRole('complementary', { name: 'Properties' })
-
-const screen = async (page: Page, p: { x: number; y: number }) => {
-  const canvas = page.getByTestId('editor-canvas')
-  await canvas.scrollIntoViewIfNeeded()
-  const box = (await canvas.boundingBox())!
-  const scale = Number(await canvas.getAttribute('data-scale'))
-  const origin = Number(await canvas.getAttribute('data-origin'))
-  return { x: box.x + origin + p.x * scale, y: box.y + origin + p.y * scale }
-}
-
-const clickAt = async (page: Page, p: { x: number; y: number }) => {
-  const s = await screen(page, p)
-  await page.mouse.click(s.x, s.y)
-}
-
-/** Share of dark pixels shown in a region of the editor canvas (label dots). */
-const inkIn = (
-  page: Page,
-  r: { x: number; y: number; width: number; height: number },
-) =>
-  page.evaluate((r) => {
-    const wrap = document.querySelector<HTMLElement>(
-      '[data-testid="editor-canvas"]',
-    )!
-    const scale = Number(wrap.dataset.scale)
-    const origin = Number(wrap.dataset.origin)
-    const c = wrap.querySelector('canvas')!
-    const dpr = c.width / c.clientWidth
-    const x0 = Math.round((origin + r.x * scale) * dpr)
-    const y0 = Math.round((origin + r.y * scale) * dpr)
-    const w = Math.round(r.width * scale * dpr)
-    const h = Math.round(r.height * scale * dpr)
-    const d = c.getContext('2d')!.getImageData(x0, y0, w, h).data
-    let dark = 0
-    for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 0 && d[i] < 128) dark++
-    return dark / (w * h)
-  }, r)
 
 /** A small PNG (dark left half, light right half). */
 const pngBuffer = async (page: Page) => {
@@ -72,7 +42,6 @@ test.beforeEach(async ({ page }) => {
 
 // T4.1
 test('adds every object type from the Add menu', async ({ page }) => {
-  const add = page.getByRole('group', { name: 'Add' })
   const types = [
     ['Text', 'text'],
     ['Rectangle', 'rect'],
@@ -83,7 +52,11 @@ test('adds every object type from the Add menu', async ({ page }) => {
   ]
   let count = 2
   for (const [name, type] of types) {
-    await add.getByRole('button', { name: `+ ${name}` }).click()
+    await openPanel(page, 'Add')
+    await page
+      .getByRole('group', { name: 'Add' })
+      .getByRole('button', { name: `+ ${name}` })
+      .click()
     count++
     await expect(status(page)).toContainText(
       `${count} objects · 1 selected · ${type} at`,
@@ -107,6 +80,7 @@ test('edits text in place: Enter saves, Esc cancels, Shift+Enter adds a line', a
     await expect(editor).toBeFocused()
     return editor
   }
+  await openPanel(page, 'Properties')
   const textField = props(page).getByLabel('Text', { exact: true })
 
   let editor = await openEditor()
@@ -128,7 +102,9 @@ test('edits text in place: Enter saves, Esc cancels, Shift+Enter adds a line', a
   await expect(textField).toHaveValue('A\nB')
 
   // One edit = one undo step
+  await openPanel(page, 'Edit')
   await page.getByRole('button', { name: 'Undo' }).click()
+  await openPanel(page, 'Properties')
   await expect(textField).toHaveValue('Shipping')
 })
 
@@ -139,6 +115,7 @@ test('properties panel edits position and content', async ({ page }) => {
   await clickAt(page, QR)
   await expect(status(page)).toContainText('qr at 19.0, 1.0 mm')
 
+  await openPanel(page, 'Properties')
   const x = props(page).getByLabel('X (mm)')
   await x.fill('')
   await x.pressSequentially('1.5')
@@ -149,9 +126,11 @@ test('properties panel edits position and content', async ({ page }) => {
     .toBeGreaterThan(0.2)
   expect(await inkIn(page, { x: 160, y: 12, width: 72, height: 72 })).toBe(0)
 
+  await openPanel(page, 'Edit')
   await page.getByRole('button', { name: 'Undo' }).click()
   await expect(status(page)).toContainText('qr at 19.0, 1.0 mm')
 
+  await openPanel(page, 'Properties')
   await props(page).getByLabel('Rotation (°)').fill('90')
   await expect(status(page)).toContainText('90°')
 
@@ -169,6 +148,7 @@ test('adds images from a file and from the clipboard', async ({ page }) => {
   // 2:1 image fits 80% of 30 mm width → 24 × 12? limited by 80% of 12 mm height
   await expect(status(page)).toContainText('19.2 × 9.6 mm')
 
+  await openPanel(page, 'Properties')
   await props(page).getByLabel('Black and white').selectOption('threshold')
   await expect(props(page).getByLabel('Threshold')).toHaveValue('128')
 
@@ -182,6 +162,7 @@ test('adds images from a file and from the clipboard', async ({ page }) => {
   }, png.toString('base64'))
   await expect(status(page)).toContainText('4 objects · 1 selected · image at')
 
+  await openPanel(page, 'Add')
   await page.getByTestId('image-file').setInputFiles({
     name: 'notes.txt',
     mimeType: 'text/plain',
@@ -194,15 +175,14 @@ test('adds images from a file and from the clipboard', async ({ page }) => {
 test('label setup with printer dpi and print-head warning', async ({
   page,
 }) => {
+  await openPanel(page, 'Properties')
   const label = props(page).getByRole('group', { name: 'Label' })
   await label.getByLabel('Width (mm)').fill('40')
   await expect(page.locator('#editor-title')).toContainText('40 × 12 mm')
   await expect(label.getByLabel('Resolution')).toBeEnabled()
   await expect(label.getByRole('note')).toHaveCount(0)
 
-  await page.getByLabel(/Emulated D110_M/).check()
-  await page.getByRole('button', { name: 'Connect' }).click()
-  await expect(page.getByText('Connected to')).toBeVisible()
+  await connectEmulator(page)
   await expect(label.getByLabel('Resolution (from D110_M)')).toBeDisabled()
   await expect(label.getByLabel('Resolution (from D110_M)')).toHaveValue('203')
 

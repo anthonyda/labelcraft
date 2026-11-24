@@ -7,9 +7,10 @@ import type { LabelDoc, LabelObject } from './model/types'
 import { usePrinter } from './printer/usePrinter'
 import { useAutosave } from './storage/useAutosave'
 import { ConnectPanel } from './ui/ConnectPanel'
+import { Modal } from './ui/Modal'
 import { PrintDialog } from './ui/PrintDialog'
 
-/** Starting 30 × 12 mm label (fits a D110_M) until labels can be saved (M5). */
+/** Starting 30 × 12 mm label (fits a D110_M) when nothing is saved yet. */
 const sampleLabel = (): LabelDoc => {
   const doc = newDoc({ widthMm: 30, heightMm: 12 })
   doc.objects.push(
@@ -35,10 +36,30 @@ const sampleLabel = (): LabelDoc => {
   return doc
 }
 
+function PrinterButton({ onClick }: { onClick: () => void }) {
+  const printer = usePrinter()
+  const connected =
+    printer.status === 'connected' || printer.status === 'printing'
+  const text = connected
+    ? (printer.model?.model ?? printer.deviceName ?? 'Connected')
+    : printer.status === 'connecting'
+      ? 'Connecting…'
+      : 'Not connected'
+  return (
+    <button type="button" className="printer-button" onClick={onClick}>
+      Printer: {text}
+      {connected && printer.transport === 'emulator' && (
+        <span className="badge">Emulated</span>
+      )}
+    </button>
+  )
+}
+
 export default function App() {
   const [store] = useState(() => new EditorStore(sampleLabel()))
   const { history } = useSyncExternalStore(store.subscribe, store.getState)
   const [printOpen, setPrintOpen] = useState(false)
+  const [printerOpen, setPrinterOpen] = useState(false)
   const autosave = useAutosave(store)
   const printerDpi = usePrinter().model?.dpi
 
@@ -51,34 +72,40 @@ export default function App() {
 
   return (
     <EditorContext value={store}>
-      <main>
-        <h1>labelcraft</h1>
-        <p>Design labels and print them from your browser. Work in progress.</p>
+      <Editor
+        autosave={autosave}
+        headerActions={
+          <>
+            <PrinterButton onClick={() => setPrinterOpen(true)} />
+            <button
+              type="button"
+              className="primary"
+              onClick={() => setPrintOpen(true)}
+            >
+              Print…
+            </button>
+          </>
+        }
+      />
 
-        <Editor autosave={autosave} />
-
-        <p>
-          <button
-            type="button"
-            className="primary"
-            onClick={() => setPrintOpen(true)}
-          >
-            Print…
-          </button>
-        </p>
-
+      <Modal
+        open={printerOpen}
+        title="Printer"
+        onClose={() => setPrinterOpen(false)}
+      >
         <ConnectPanel />
+        <div className="actions">
+          <button type="button" onClick={() => setPrinterOpen(false)}>
+            Done
+          </button>
+        </div>
+      </Modal>
 
-        <PrintDialog
-          doc={history.present}
-          open={printOpen}
-          onClose={() => setPrintOpen(false)}
-        />
-
-        <p className="notice">
-          Independent project, not affiliated with or endorsed by NIIMBOT.
-        </p>
-      </main>
+      <PrintDialog
+        doc={history.present}
+        open={printOpen}
+        onClose={() => setPrintOpen(false)}
+      />
     </EditorContext>
   )
 }

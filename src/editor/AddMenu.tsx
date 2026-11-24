@@ -13,7 +13,7 @@ const ITEMS: [Exclude<ObjectType, 'image'>, string][] = [
   ['barcode', 'Barcode'],
 ]
 
-export function AddMenu() {
+export function AddMenu({ onAdded }: { onAdded?: () => void } = {}) {
   const store = useEditorStore()
   const fileRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string>()
@@ -23,6 +23,7 @@ export function AddMenu() {
     setError(undefined)
     try {
       store.addObject(await imageObjectFromFile(file, store.doc.label))
+      onAdded?.()
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     }
@@ -31,7 +32,14 @@ export function AddMenu() {
   return (
     <div className="group" role="group" aria-label="Add">
       {ITEMS.map(([type, name]) => (
-        <button key={type} type="button" onClick={() => store.addObject(type)}>
+        <button
+          key={type}
+          type="button"
+          onClick={() => {
+            store.addObject(type)
+            onAdded?.()
+          }}
+        >
           + {name}
         </button>
       ))}

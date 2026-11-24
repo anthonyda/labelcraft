@@ -10,13 +10,13 @@ import { boundingBox } from '../model/ops'
 import type { LabelObject, TextObject } from '../model/types'
 import { labelSizePx, mmToPx, ptToPx, pxToMm } from '../model/units'
 import { objectPixelBox } from '../render/renderObject'
+import { COARSE_POINTER_QUERY, useMediaQuery } from '../ui/useMediaQuery'
 import type { ObjectPatch } from './store'
 import { useEditorState, useEditorStore, useObjectBitmap } from './useEditor'
+import { ZOOM_MAX, ZOOM_MIN } from './zoom'
 
-/** Screen px around the label. */
+/** Minimum screen px around the label. */
 export const CANVAS_PADDING = 16
-/** Largest canvas height as a share of the viewport, at zoom 1. */
-const MAX_HEIGHT_VH = 0.55
 
 type Band = { x1: number; y1: number; x2: number; y2: number }
 
@@ -72,11 +72,13 @@ function TextEditor({
   o,
   dpi,
   scale,
+  origin,
   onDone,
 }: {
   o: TextObject
   dpi: number
   scale: number
+  origin: { x: number; y: number }
   onDone: (text?: string) => void
 }) {
   const ref = useRef<HTMLTextAreaElement>(null)
@@ -99,8 +101,8 @@ function TextEditor({
       defaultValue={o.text}
       spellCheck={false}
       style={{
-        left: CANVAS_PADDING + box.x * scale,
-        top: CANVAS_PADDING + box.y * scale,
+        left: origin.x + box.x * scale,
+        top: origin.y + box.y * scale,
         width: box.width * scale,
         height: box.height * scale,
         transform: o.rotation ? `rotate(${o.rotation}deg)` : undefined,
@@ -126,7 +128,13 @@ function TextEditor({
   )
 }
 
-export function EditorCanvas({ zoom }: { zoom: number }) {
+export function EditorCanvas({
+  zoom,
+  setZoom,
+}: {
+  zoom: number
+  setZoom: (z: number) => void
+}) {
   const store = useEditorStore()
   const { history, selection } = useEditorState()
   const doc = history.present
@@ -136,7 +144,8 @@ export function EditorCanvas({ zoom }: { zoom: number }) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<Konva.Stage>(null)
   const trRef = useRef<Konva.Transformer>(null)
-  const [containerWidth, setContainerWidth] = useState(600)
+  const [container, setContainer] = useState({ width: 600, height: 300 })
+  const coarse = useMediaQuery(COARSE_POINTER_QUERY)
   const [band, setBand] = useState<Band>()
   const [editingId, setEditingId] = useState<string>()
   const editing = doc.objects.find(
@@ -147,24 +156,140 @@ export function EditorCanvas({ zoom }: { zoom: number }) {
     const el = wrapperRef.current
     if (!el) return
     const ro = new ResizeObserver(([entry]) =>
-      setContainerWidth(entry.contentRect.width),
+      setContainer({
+        width: entry.contentRect.width,
+        height: entry.contentRect.height,
+      }),
     )
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
 
-  // Fit the label in the available width and a share of the viewport height.
-  const maxH = Math.max(160, window.innerHeight * MAX_HEIGHT_VH)
+  // Fit the label in the space available (R4.AC1, R15).
   const fit = Math.min(
-    (containerWidth - 2 * CANVAS_PADDING) / label.width,
-    (maxH - 2 * CANVAS_PADDING) / label.height,
+    (container.width - 2 * CANVAS_PADDING) / label.width,
+    (container.height - 2 * CANVAS_PADDING) / label.height,
   )
   const scale = Math.max(0.05, fit * zoom)
   const stageW = Math.max(
-    containerWidth,
+    container.width,
     label.width * scale + 2 * CANVAS_PADDING,
   )
-  const stageH = label.height * scale + 2 * CANVAS_PADDING
+  const stageH = Math.max(
+    container.height,
+    label.height * scale + 2 * CANVAS_PADDING,
+  )
+  // Label centred in the stage (screen px).
+  const origin = {
+    x: Math.round((stageW - label.width * scale) / 2),
+    y: Math.round((stageH - label.height * scale) / 2),
+  }
+
+  // Two-finger gestures (T6.2, R15.AC4): pinch to zoom, move to pan.
+  const gesture = useRef<{
+    dist: number
+    mid: { x: number; y: number }
+    zoom: number
+  }>(undefined)
+  /** When the last two-finger gesture ended (its taps are not double-taps). */
+  const gestureEndedAt = useRef(0)
+  const zoomRef = useRef(zoom)
+  useLayoutEffect(() => {
+    zoomRef.current = zoom
+  }, [zoom])
+  const pendingAnchor = useRef<{ x: number; y: number; ratio: number }>(
+    undefined,
+  )
+  useEffect(() => {
+    const el = wrapperRef.current
+    if (!el) return
+    const points = (e: TouchEvent) => {
+      const r = el.getBoundingClientRect()
+      const [a, b] = [e.touches[0], e.touches[1]]
+      return {
+        dist: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY),
+        mid: {
+          x: (a.clientX + b.clientX) / 2 - r.left,
+          y: (a.clientY + b.clientY) / 2 - r.top,
+        },
+      }
+    }
+    // Selection before the first finger landed, to undo a tap that turns
+    // out to be the start of a pinch.
+    let firstTouch: { at: number; selection: string[] } | undefined
+    const objectNodes = () => stageRef.current?.find('.object') ?? []
+    const onStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        firstTouch = { at: Date.now(), selection: store.selection }
+        return
+      }
+      if (e.touches.length !== 2) return
+      // A second finger turns any drag or selection box into a gesture.
+      objectNodes().forEach((n) => {
+        if (n.isDragging()) n.stopDrag()
+        n.draggable(false)
+      })
+      setBand(undefined)
+      if (firstTouch && Date.now() - firstTouch.at < 500) {
+        store.select(firstTouch.selection)
+      }
+      firstTouch = undefined
+      gesture.current = { ...points(e), zoom: zoomRef.current }
+    }
+    const onMove = (e: TouchEvent) => {
+      const g = gesture.current
+      if (!g || e.touches.length !== 2) return
+      e.preventDefault()
+      const p = points(e)
+      el.scrollLeft -= p.mid.x - g.mid.x
+      el.scrollTop -= p.mid.y - g.mid.y
+      const next = Math.min(
+        ZOOM_MAX,
+        Math.max(ZOOM_MIN, (g.zoom * p.dist) / Math.max(1, g.dist)),
+      )
+      if (Math.abs(next - zoomRef.current) > 0.01) {
+        pendingAnchor.current = {
+          ...p.mid,
+          ratio: next / zoomRef.current,
+        }
+        setZoom(next)
+      }
+      gesture.current = { ...g, mid: p.mid }
+    }
+    // After a gesture, swallow touch ends until every finger is up, so the
+    // browser doesn't follow the pinch or pan with an emulated mouse click.
+    let suppressClick = false
+    const onEnd = (e: TouchEvent) => {
+      if (gesture.current) suppressClick = true
+      if (suppressClick && e.cancelable) e.preventDefault()
+      if (e.touches.length === 0) suppressClick = false
+      if (e.touches.length < 2 && gesture.current) {
+        gesture.current = undefined
+        gestureEndedAt.current = Date.now()
+        objectNodes().forEach((n) => n.draggable(true))
+      }
+    }
+    el.addEventListener('touchstart', onStart, { capture: true })
+    el.addEventListener('touchmove', onMove, { capture: true, passive: false })
+    el.addEventListener('touchend', onEnd, { capture: true, passive: false })
+    el.addEventListener('touchcancel', onEnd, { capture: true })
+    return () => {
+      el.removeEventListener('touchstart', onStart, { capture: true })
+      el.removeEventListener('touchmove', onMove, { capture: true })
+      el.removeEventListener('touchend', onEnd, { capture: true })
+      el.removeEventListener('touchcancel', onEnd, { capture: true })
+    }
+  }, [setZoom, store])
+
+  // Keep the pinch midpoint under the fingers after zooming.
+  useLayoutEffect(() => {
+    const a = pendingAnchor.current
+    const el = wrapperRef.current
+    if (!a || !el) return
+    pendingAnchor.current = undefined
+    el.scrollLeft = (el.scrollLeft + a.x) * a.ratio - a.x
+    el.scrollTop = (el.scrollTop + a.y) * a.ratio - a.y
+  }, [scale])
 
   // Attach the transformer to the selected nodes.
   useEffect(() => {
@@ -219,6 +344,8 @@ export function EditorCanvas({ zoom }: { zoom: number }) {
   const onObjectDown =
     (id: string) => (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
       e.cancelBubble = true
+      // Fingers of a pinch don't select.
+      if (gesture.current) return
       const shift = 'shiftKey' in e.evt && e.evt.shiftKey
       if (shift) store.toggleSelected(id)
       else if (!store.selection.includes(id)) store.select([id])
@@ -230,6 +357,7 @@ export function EditorCanvas({ zoom }: { zoom: number }) {
   }
 
   const onStageDown = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+    if (gesture.current) return
     if (
       e.target.hasName('object') ||
       e.target.getParent()?.className === 'Transformer'
@@ -241,7 +369,7 @@ export function EditorCanvas({ zoom }: { zoom: number }) {
   }
 
   const onStageMove = () => {
-    if (!band) return
+    if (!band || gesture.current) return
     const p = pointer()
     if (p) setBand({ ...band, x2: p.x, y2: p.y })
   }
@@ -279,14 +407,15 @@ export function EditorCanvas({ zoom }: { zoom: number }) {
       className="editor-canvas"
       data-testid="editor-canvas"
       data-scale={scale}
-      data-origin={CANVAS_PADDING}
+      data-origin-x={origin.x}
+      data-origin-y={origin.y}
     >
       <Stage
         ref={stageRef}
         width={stageW}
         height={stageH}
-        x={CANVAS_PADDING}
-        y={CANVAS_PADDING}
+        x={origin.x}
+        y={origin.y}
         scaleX={scale}
         scaleY={scale}
         onMouseDown={onStageDown}
@@ -317,6 +446,13 @@ export function EditorCanvas({ zoom }: { zoom: number }) {
               onTransformEnd={commitOnce}
               onEdit={() => {
                 if (o.type !== 'text') return
+                // Fingers of a pinch or pan are not a double-tap.
+                if (
+                  gesture.current ||
+                  Date.now() - gestureEndedAt.current < 800
+                ) {
+                  return
+                }
                 store.select([o.id])
                 setEditingId(o.id)
               }}
@@ -329,7 +465,8 @@ export function EditorCanvas({ zoom }: { zoom: number }) {
             keepRatio={false}
             flipEnabled={false}
             ignoreStroke
-            anchorSize={10}
+            anchorSize={coarse ? 22 : 10}
+            rotateAnchorOffset={coarse ? 36 : 30}
             borderStroke="#2563eb"
             anchorStroke="#2563eb"
             boundBoxFunc={(oldBox, newBox) =>
@@ -358,6 +495,7 @@ export function EditorCanvas({ zoom }: { zoom: number }) {
           o={editing}
           dpi={dpi}
           scale={scale}
+          origin={origin}
           onDone={(text) => {
             setEditingId(undefined)
             if (text !== undefined && text !== editing.text) {

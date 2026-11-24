@@ -1,17 +1,22 @@
-/** Editor: toolbar, canvas, keyboard shortcuts and status line (M3). */
-import { useEffect, useState } from 'react'
+/**
+ * Editor shell (M3, M6). Desktop (≥ 900 px): toolbar on top, canvas in the
+ * middle, properties on the side. Phone: the canvas fills the screen and the
+ * tools live in a bottom bar whose panels open as bottom sheets (R15).
+ */
+import { useEffect, useState, type ReactNode } from 'react'
 import { pxToMm } from '../model/units'
 import type { AutosaveStatus } from '../storage/useAutosave'
+import { Sheet } from '../ui/Sheet'
+import { PHONE_QUERY, useMediaQuery } from '../ui/useMediaQuery'
 import { AddMenu } from './AddMenu'
+import { EditTools } from './EditTools'
 import { EditorCanvas } from './EditorCanvas'
-import { FileMenu } from './FileMenu'
+import { FileMenu, FileStatus } from './FileMenu'
 import { imageObjectFromFile, isImageFile } from './images'
 import { PropertiesPanel } from './PropertiesPanel'
 import { commandForKey, isTypingTarget, type Command } from './shortcuts'
 import type { EditorStore } from './store'
 import { useEditorState, useEditorStore } from './useEditor'
-
-const ZOOM_STEPS = [0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8]
 
 const run = (store: EditorStore, c: Command) => {
   switch (c.type) {
@@ -38,154 +43,52 @@ const run = (store: EditorStore, c: Command) => {
 
 const fmt = (n: number) => n.toFixed(1)
 
-function Toolbar({
-  zoom,
-  setZoom,
-}: {
-  zoom: number
-  setZoom: (z: number) => void
-}) {
-  const store = useEditorStore()
-  useEditorState() // re-render on changes
-  const none = store.selection.length === 0
-  const zoomIndex = ZOOM_STEPS.indexOf(zoom)
-
-  return (
-    <div className="toolbar" role="toolbar" aria-label="Editor tools">
-      <AddMenu />
-      <div className="group" role="group" aria-label="History">
-        <button
-          type="button"
-          onClick={() => store.undo()}
-          disabled={!store.canUndo}
-        >
-          Undo
-        </button>
-        <button
-          type="button"
-          onClick={() => store.redo()}
-          disabled={!store.canRedo}
-        >
-          Redo
-        </button>
-      </div>
-      <div className="group" role="group" aria-label="Selection">
-        <button
-          type="button"
-          onClick={() => store.duplicateSelection()}
-          disabled={none}
-        >
-          Duplicate
-        </button>
-        <button
-          type="button"
-          onClick={() => store.deleteSelection()}
-          disabled={none}
-        >
-          Delete
-        </button>
-      </div>
-      <div className="group" role="group" aria-label="Arrange">
-        <button
-          type="button"
-          onClick={() => store.reorderSelection('front')}
-          disabled={none}
-        >
-          To front
-        </button>
-        <button
-          type="button"
-          onClick={() => store.reorderSelection('forward')}
-          disabled={none}
-        >
-          Forward
-        </button>
-        <button
-          type="button"
-          onClick={() => store.reorderSelection('backward')}
-          disabled={none}
-        >
-          Backward
-        </button>
-        <button
-          type="button"
-          onClick={() => store.reorderSelection('back')}
-          disabled={none}
-        >
-          To back
-        </button>
-      </div>
-      <div className="group" role="group" aria-label="Align to label">
-        {(
-          [
-            ['left', 'Align left'],
-            ['center', 'Align centre'],
-            ['right', 'Align right'],
-            ['top', 'Align top'],
-            ['middle', 'Align middle'],
-            ['bottom', 'Align bottom'],
-          ] as const
-        ).map(([edge, name]) => (
-          <button
-            key={edge}
-            type="button"
-            onClick={() => store.alignSelection(edge)}
-            disabled={none}
-          >
-            {name}
-          </button>
-        ))}
-      </div>
-      <div className="group" role="group" aria-label="Zoom">
-        <button
-          type="button"
-          aria-label="Zoom out"
-          onClick={() => setZoom(ZOOM_STEPS[Math.max(0, zoomIndex - 1)])}
-          disabled={zoomIndex <= 0}
-        >
-          −
-        </button>
-        <output aria-label="Zoom level">{Math.round(zoom * 100)}%</output>
-        <button
-          type="button"
-          aria-label="Zoom in"
-          onClick={() =>
-            setZoom(ZOOM_STEPS[Math.min(ZOOM_STEPS.length - 1, zoomIndex + 1)])
-          }
-          disabled={zoomIndex >= ZOOM_STEPS.length - 1}
-        >
-          +
-        </button>
-        <button type="button" onClick={() => setZoom(1)}>
-          Fit
-        </button>
-      </div>
-    </div>
-  )
-}
-
 function StatusLine() {
   const { history, selection } = useEditorState()
   const doc = history.present
   const selected = doc.objects.filter((o) => selection.includes(o.id))
   const one = selected.length === 1 ? selected[0] : undefined
   return (
-    <p className="status" data-testid="editor-status" aria-live="polite">
-      {doc.objects.length} objects · {selection.length} selected
-      {one && (
-        <>
-          {' · '}
-          {one.type} at {fmt(one.x)}, {fmt(one.y)} mm · {fmt(one.width)} ×{' '}
-          {fmt(one.height)} mm · {Math.round(one.rotation)}°
-        </>
-      )}
-    </p>
+    <div className="status-line">
+      <span id="editor-title" className="label-size">
+        {doc.label.widthMm} × {doc.label.heightMm} mm ·{' '}
+        {fmt(pxToMm(1, doc.label.dpi) * 1000)} µm per dot
+      </span>
+      <p className="status" data-testid="editor-status" aria-live="polite">
+        {doc.objects.length} objects · {selection.length} selected
+        {one && (
+          <>
+            {' · '}
+            {one.type} at {fmt(one.x)}, {fmt(one.y)} mm · {fmt(one.width)} ×{' '}
+            {fmt(one.height)} mm · {Math.round(one.rotation)}°
+          </>
+        )}
+      </p>
+    </div>
   )
 }
 
-export function Editor({ autosave }: { autosave: AutosaveStatus }) {
+type Panel = 'labels' | 'add' | 'edit' | 'properties'
+
+const PANELS: [Panel, string][] = [
+  ['labels', 'Labels'],
+  ['add', 'Add'],
+  ['edit', 'Edit'],
+  ['properties', 'Properties'],
+]
+
+export function Editor({
+  autosave,
+  headerActions,
+}: {
+  autosave: AutosaveStatus
+  /** Printer and print buttons, shown in the header. */
+  headerActions: ReactNode
+}) {
   const store = useEditorStore()
   const [zoom, setZoom] = useState(1)
+  const phone = useMediaQuery(PHONE_QUERY)
+  const [panel, setPanel] = useState<Panel>()
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -215,25 +118,89 @@ export function Editor({ autosave }: { autosave: AutosaveStatus }) {
     }
   }, [store])
 
-  const doc = useEditorState().history.present
+  const togglePanel = (p: Panel) =>
+    setPanel((cur) => (cur === p ? undefined : p))
+
   return (
-    <section className="panel editor" aria-labelledby="editor-title">
-      <h2 id="editor-title">
-        Label{' '}
-        <small>
-          {doc.label.widthMm} × {doc.label.heightMm} mm ·{' '}
-          {fmt(pxToMm(1, doc.label.dpi) * 1000)} µm per dot
-        </small>
-      </h2>
-      <FileMenu autosave={autosave} />
-      <Toolbar zoom={zoom} setZoom={setZoom} />
-      <div className="editor-body">
+    <div className={`app ${phone ? 'phone' : 'desktop'}`}>
+      <header className="app-header">
+        <h1 className="brand">labelcraft</h1>
+        <FileStatus autosave={autosave} />
+        <div className="header-actions">{headerActions}</div>
+      </header>
+
+      {!phone && (
+        <div className="toolbar" role="toolbar" aria-label="Editor tools">
+          <FileMenu />
+          <AddMenu />
+          <EditTools zoom={zoom} setZoom={setZoom} />
+        </div>
+      )}
+
+      <div className="workspace">
         <div className="editor-main">
-          <EditorCanvas zoom={zoom} />
+          <EditorCanvas zoom={zoom} setZoom={setZoom} />
           <StatusLine />
         </div>
-        <PropertiesPanel />
+        {!phone && <PropertiesPanel />}
       </div>
-    </section>
+
+      {phone && (
+        <>
+          <Sheet
+            id="sheet-labels"
+            title="Labels"
+            open={panel === 'labels'}
+            onClose={() => setPanel(undefined)}
+          >
+            <FileMenu />
+          </Sheet>
+          <Sheet
+            id="sheet-add"
+            title="Add"
+            open={panel === 'add'}
+            onClose={() => setPanel(undefined)}
+          >
+            <AddMenu onAdded={() => setPanel(undefined)} />
+          </Sheet>
+          <Sheet
+            id="sheet-edit"
+            title="Edit"
+            open={panel === 'edit'}
+            onClose={() => setPanel(undefined)}
+          >
+            <div className="toolbar" role="toolbar" aria-label="Editor tools">
+              <EditTools zoom={zoom} setZoom={setZoom} />
+            </div>
+          </Sheet>
+          <Sheet
+            id="sheet-properties"
+            title="Properties"
+            open={panel === 'properties'}
+            onClose={() => setPanel(undefined)}
+          >
+            <PropertiesPanel />
+          </Sheet>
+          <nav className="bottom-bar" aria-label="Editor panels">
+            {PANELS.map(([p, name]) => (
+              <button
+                key={p}
+                type="button"
+                aria-expanded={panel === p}
+                aria-controls={`sheet-${p}`}
+                className={panel === p ? 'active' : undefined}
+                onClick={() => togglePanel(p)}
+              >
+                {name}
+              </button>
+            ))}
+          </nav>
+        </>
+      )}
+
+      <p className="notice">
+        Independent project, not affiliated with or endorsed by NIIMBOT.
+      </p>
+    </div>
   )
 }
