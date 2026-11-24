@@ -16,7 +16,11 @@ export function Modal({
 }) {
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
+  // Whether the app still wants the dialog open; used to tell a close the
+  // user started (Esc, form button) from one the app made by setting open=false.
+  const wantedOpen = useRef(open)
   useEffect(() => {
+    wantedOpen.current = open
     const d = ref.current
     if (!d) return
     if (open && !d.open) d.showModal()
@@ -27,7 +31,9 @@ export function Modal({
       ref={ref}
       className={`modal ${className}`}
       aria-labelledby={titleId}
-      onClose={onClose}
+      onClose={() => {
+        if (wantedOpen.current) onClose()
+      }}
     >
       <h1 id={titleId}>{title}</h1>
       {open && children}
