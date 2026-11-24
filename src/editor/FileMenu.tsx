@@ -20,6 +20,7 @@ import {
   labelThumbnail,
 } from '../storage/files'
 import type { AutosaveStatus } from '../storage/useAutosave'
+import { Button } from '../ui/icons'
 import { Modal } from '../ui/Modal'
 import { useEditorState, useEditorStore } from './useEditor'
 
@@ -149,38 +150,38 @@ export function FileMenu() {
   return (
     <>
       <div className="group" role="group" aria-label="Labels">
-        <button
-          type="button"
+        <Button
+          icon="new"
           onClick={() =>
             guard(() => store.load(newDoc({ ...store.doc.label })))
           }
         >
           New
-        </button>
-        <button type="button" onClick={onOpen}>
+        </Button>
+        <Button icon="open" onClick={onOpen}>
           Open…
-        </button>
-        <button type="button" onClick={onSave}>
+        </Button>
+        <Button icon="save" onClick={onSave}>
           Save
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          icon="saveAs"
           onClick={() => {
             setName(file.name ?? '')
             setPending({ kind: 'saveAs' })
           }}
         >
           Save as…
-        </button>
-        <button type="button" onClick={() => importRef.current?.click()}>
+        </Button>
+        <Button icon="import" onClick={() => importRef.current?.click()}>
           Import…
-        </button>
-        <button type="button" onClick={exportJson}>
+        </Button>
+        <Button icon="export" onClick={exportJson}>
           Export file
-        </button>
-        <button type="button" onClick={exportPng}>
+        </Button>
+        <Button icon="exportPng" onClick={exportPng}>
           Export PNG
-        </button>
+        </Button>
         <input
           ref={importRef}
           type="file"
@@ -225,12 +226,12 @@ export function FileMenu() {
             />
           </div>
           <div className="actions">
-            <button type="button" onClick={close}>
+            <Button icon="close" onClick={close}>
               Cancel
-            </button>
-            <button type="submit" className="primary">
+            </Button>
+            <Button icon="save" type="submit" className="primary">
               Save
-            </button>
+            </Button>
           </div>
         </form>
       </Modal>
@@ -255,35 +256,32 @@ export function FileMenu() {
                 </span>
                 {confirmDelete === l.id ? (
                   <>
-                    <button
-                      type="button"
+                    <Button
+                      icon="check"
                       onClick={() => setConfirmDelete(undefined)}
                     >
                       Keep
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button
+                      icon="trash"
                       className="danger"
                       onClick={() => void onDelete(l.id)}
                     >
                       Delete "{l.name}"
-                    </button>
+                    </Button>
                   </>
                 ) : (
                   <>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmDelete(l.id)}
-                    >
+                    <Button icon="trash" onClick={() => setConfirmDelete(l.id)}>
                       Delete
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button
+                      icon="open"
                       className="primary"
                       onClick={() => guard(() => void openLabel(l.id))}
                     >
                       Open
-                    </button>
+                    </Button>
                   </>
                 )}
               </li>
@@ -291,9 +289,9 @@ export function FileMenu() {
           </ul>
         )}
         <div className="actions">
-          <button type="button" onClick={close}>
+          <Button icon="close" onClick={close}>
             Close
-          </button>
+          </Button>
         </div>
       </Modal>
 
@@ -306,8 +304,8 @@ export function FileMenu() {
           <>
             <p>{pending.message}</p>
             <div className="actions">
-              <button
-                type="button"
+              <Button
+                icon="trash"
                 className="danger"
                 onClick={() => {
                   const then = pending.then
@@ -316,15 +314,10 @@ export function FileMenu() {
                 }}
               >
                 Discard
-              </button>
-              <button
-                type="button"
-                className="primary"
-                autoFocus
-                onClick={close}
-              >
+              </Button>
+              <Button icon="edit" className="primary" autoFocus onClick={close}>
                 Keep editing
-              </button>
+              </Button>
             </div>
           </>
         )}

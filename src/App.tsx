@@ -9,6 +9,7 @@ import type { LoadedRoll } from './printer/printerService'
 import { useKnownModel, usePrinter } from './printer/usePrinter'
 import { useAutosave } from './storage/useAutosave'
 import { ConnectPanel } from './ui/ConnectPanel'
+import { Button, Icon } from './ui/icons'
 import { Modal } from './ui/Modal'
 import { PrintDialog } from './ui/PrintDialog'
 
@@ -54,6 +55,7 @@ function PrinterButton({ onClick }: { onClick: () => void }) {
           : 'Not connected'
   return (
     <button type="button" className="printer-button" onClick={onClick}>
+      <Icon name="plug" />
       Printer: {text}
       {model?.source === 'chosen' && printer.status !== 'connecting' && (
         <span className="badge chosen">
@@ -100,13 +102,13 @@ export default function App() {
         headerActions={
           <>
             <PrinterButton onClick={() => setPrinterOpen(true)} />
-            <button
-              type="button"
+            <Button
+              icon="printer"
               className="primary"
               onClick={() => setPrintOpen(true)}
             >
               Print…
-            </button>
+            </Button>
           </>
         }
       />
@@ -118,9 +120,9 @@ export default function App() {
       >
         <ConnectPanel />
         <div className="actions">
-          <button type="button" onClick={() => setPrinterOpen(false)}>
+          <Button icon="check" onClick={() => setPrinterOpen(false)}>
             Done
-          </button>
+          </Button>
         </div>
       </Modal>
 

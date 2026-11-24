@@ -11,7 +11,7 @@ const addRect = async (page: Page) => {
   await openPanel(page, 'Add')
   await page
     .getByRole('group', { name: 'Add' })
-    .getByRole('button', { name: '+ Rectangle' })
+    .getByRole('button', { name: 'Rectangle', exact: true })
     .click()
 }
 

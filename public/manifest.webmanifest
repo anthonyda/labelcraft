@@ -1,0 +1,18 @@
+{
+  "name": "labelcraft",
+  "short_name": "labelcraft",
+  "description": "Design labels and print them to NIIMBOT printers from the browser.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

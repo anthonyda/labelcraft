@@ -23,7 +23,7 @@ export default defineConfig({
         // Pure logic (model, units, history): runs in Node.
         test: {
           name: 'unit',
-          include: ['src/**/*.test.ts'],
+          include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
           exclude: ['src/**/*.browser.test.ts'],
         },
       },

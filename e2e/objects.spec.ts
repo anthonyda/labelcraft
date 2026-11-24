@@ -55,7 +55,7 @@ test('adds every object type from the Add menu', async ({ page }) => {
     await openPanel(page, 'Add')
     await page
       .getByRole('group', { name: 'Add' })
-      .getByRole('button', { name: `+ ${name}` })
+      .getByRole('button', { name, exact: true })
       .click()
     count++
     await expect(status(page)).toContainText(

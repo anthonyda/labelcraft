@@ -32,8 +32,12 @@ fieldset {
 }
 
 button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   min-height: 44px;
-  padding: 0 1rem;
+  padding: 0 0.875rem;
   font: inherit;
   border-radius: 0.375rem;
   border: 1px solid var(--border);
@@ -337,6 +341,9 @@ body {
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   margin: 0;
   font-weight: 700;
   font-size: 1.25rem;
@@ -460,6 +467,9 @@ body {
 }
 
 .bottom-bar button {
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.8125rem;
   border: 0;
   border-radius: 0;
   min-height: 52px;
@@ -563,4 +573,20 @@ fieldset,
 .roll-offer p,
 .roll-info p {
   margin: 0;
+}
+
+/* M6c: icons (R20) */
+.icon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+
+.logo {
+  flex: none;
+}
+
+.phone .brand .logo {
+  width: 22px;
+  height: 22px;
 }

@@ -23,15 +23,7 @@ const PANEL_CONTENT: Record<PanelName, string[]> = {
     'Export file',
     'Export PNG',
   ],
-  Add: [
-    '+ Text',
-    '+ Rectangle',
-    '+ Ellipse',
-    '+ Line',
-    '+ QR code',
-    '+ Barcode',
-    '+ Image',
-  ],
+  Add: ['Text', 'Rectangle', 'Ellipse', 'Line', 'QR code', 'Barcode', 'Image'],
   Edit: [
     'Undo',
     'Redo',
@@ -220,4 +212,46 @@ test('phone: one finger drags an object', async ({ page }) => {
   const qr = await screen(page, { x: 192, y: 48 })
   await gesture(page, [qr], [{ x: qr.x - 16 * qr.scale, y: qr.y }])
   await expect(status(page)).toContainText('qr at 17.0, 1.0 mm')
+})
+
+/** Visible buttons whose first child is not an icon (R20.AC1). */
+const buttonsWithoutIcon = (page: Page) =>
+  page.evaluate(() =>
+    Array.from(document.querySelectorAll('button'))
+      .filter((b) => b.offsetParent !== null)
+      .filter((b) => {
+        const first = b.firstElementChild
+        return !(
+          first?.matches('svg.icon') &&
+          first.getAttribute('aria-hidden') === 'true'
+        )
+      })
+      .map((b) => b.textContent?.trim() || b.getAttribute('aria-label')),
+  )
+
+// R20.AC1, AC3–AC4 / T6c.2–T6c.3
+test('every button has an icon before its text; logo in the header', async ({
+  page,
+}) => {
+  await expect(page.locator('h1.brand svg.logo')).toBeVisible()
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute(
+    'href',
+    './favicon.svg',
+  )
+  expect(await buttonsWithoutIcon(page)).toEqual([])
+  for (const panel of Object.keys(PANEL_CONTENT) as PanelName[]) {
+    await openPanel(page, panel)
+    expect(await buttonsWithoutIcon(page), panel).toEqual([])
+  }
+  // Dialogs: Printer (with the emulator connected) and Print.
+  await page.getByRole('button', { name: /^Printer:/ }).click()
+  const printer = page.getByRole('dialog', { name: 'Printer' })
+  await printer.getByLabel(/Emulated D110_M/).check()
+  await printer.getByRole('button', { name: 'Connect' }).click()
+  await expect(printer.getByText('Connected to')).toBeVisible()
+  expect(await buttonsWithoutIcon(page)).toEqual([])
+  await printer.getByRole('button', { name: 'Done' }).click()
+  await page.getByRole('button', { name: 'Print…' }).click()
+  await expect(page.getByRole('dialog', { name: 'Print' })).toBeVisible()
+  expect(await buttonsWithoutIcon(page)).toEqual([])
 })

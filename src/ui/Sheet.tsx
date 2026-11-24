@@ -4,6 +4,7 @@
  * started from it keep working.
  */
 import { useEffect, useRef, type ReactNode } from 'react'
+import { Button } from './icons'
 
 export function Sheet({
   id,
@@ -37,9 +38,9 @@ export function Sheet({
     >
       <div className="sheet-header">
         <h2 id={`${id}-title`}>{title}</h2>
-        <button type="button" onClick={onClose}>
+        <Button icon="close" onClick={onClose}>
           Close
-        </button>
+        </Button>
       </div>
       {children}
     </dialog>

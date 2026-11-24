@@ -1,16 +1,17 @@
 /** Add-object menu (T4.1) incl. image file picker (T4.3). */
 import { useRef, useState } from 'react'
 import type { ObjectType } from '../model/types'
+import { Button, type IconName } from '../ui/icons'
 import { IMAGE_ACCEPT, imageObjectFromFile } from './images'
 import { useEditorStore } from './useEditor'
 
-const ITEMS: [Exclude<ObjectType, 'image'>, string][] = [
-  ['text', 'Text'],
-  ['rect', 'Rectangle'],
-  ['ellipse', 'Ellipse'],
-  ['line', 'Line'],
-  ['qr', 'QR code'],
-  ['barcode', 'Barcode'],
+const ITEMS: [Exclude<ObjectType, 'image'>, string, IconName][] = [
+  ['text', 'Text', 'text'],
+  ['rect', 'Rectangle', 'rect'],
+  ['ellipse', 'Ellipse', 'ellipse'],
+  ['line', 'Line', 'line'],
+  ['qr', 'QR code', 'qr'],
+  ['barcode', 'Barcode', 'barcode'],
 ]
 
 export function AddMenu({ onAdded }: { onAdded?: () => void } = {}) {
@@ -31,21 +32,21 @@ export function AddMenu({ onAdded }: { onAdded?: () => void } = {}) {
 
   return (
     <div className="group" role="group" aria-label="Add">
-      {ITEMS.map(([type, name]) => (
-        <button
+      {ITEMS.map(([type, name, icon]) => (
+        <Button
           key={type}
-          type="button"
+          icon={icon}
           onClick={() => {
             store.addObject(type)
             onAdded?.()
           }}
         >
-          + {name}
-        </button>
+          {name}
+        </Button>
       ))}
-      <button type="button" onClick={() => fileRef.current?.click()}>
-        + Image
-      </button>
+      <Button icon="image" onClick={() => fileRef.current?.click()}>
+        Image
+      </Button>
       <input
         ref={fileRef}
         type="file"

@@ -1,5 +1,6 @@
 /** R18.AC3: offer the loaded roll's size when it differs from the label's. */
 import { usePrinter, useKnownModel } from '../printer/usePrinter'
+import { Button } from '../ui/icons'
 import { labelForRoll, sameSize } from './labelSize'
 import { useEditorState, useEditorStore } from './useEditor'
 
@@ -18,9 +19,9 @@ export function RollOffer() {
   return (
     <div className="roll-offer">
       <p>The printer has {name} labels loaded.</p>
-      <button type="button" onClick={() => store.setLabel(target)}>
+      <Button icon="roll" onClick={() => store.setLabel(target)}>
         Use loaded roll ({name})
-      </button>
+      </Button>
     </div>
   )
 }

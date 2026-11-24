@@ -20,6 +20,7 @@ import {
 } from '../model/labelSizes'
 import { labelSizePx } from '../model/units'
 import { useKnownModel } from '../printer/usePrinter'
+import { Button } from '../ui/icons'
 import {
   CheckField,
   FieldGroup,
@@ -225,9 +226,9 @@ function ObjectFields({ o }: { o: LabelObject }) {
 
         {o.type === 'image' && (
           <>
-            <button type="button" onClick={() => fileRef.current?.click()}>
+            <Button icon="image" onClick={() => fileRef.current?.click()}>
               Replace image…
-            </button>
+            </Button>
             <input
               ref={fileRef}
               type="file"

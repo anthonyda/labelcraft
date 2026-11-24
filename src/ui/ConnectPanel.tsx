@@ -3,6 +3,7 @@ import { LabelType, modelsLibrary } from '@mmote/niimbluelib'
 import { useMemo, useState } from 'react'
 import { RollOffer } from '../editor/RollOffer'
 import { FAMILIES, FAMILY_ORDER, familyOfModel } from '../model/labelSizes'
+import { Button } from './icons'
 import {
   availableTransports,
   canPrintToHardware,
@@ -81,13 +82,13 @@ function RollInfo() {
           This printer didn't report the loaded roll.
         </p>
       )}
-      <button
-        type="button"
+      <Button
+        icon="refresh"
         onClick={() => printerService.readRoll()}
         disabled={state.status !== 'connected'}
       >
         Read roll
-      </button>
+      </Button>
       <RollOffer />
     </div>
   )
@@ -171,22 +172,22 @@ export function ConnectPanel() {
       )}
 
       {connected ? (
-        <button
-          type="button"
+        <Button
+          icon="unplug"
           onClick={() => printerService.disconnect()}
           disabled={state.status === 'printing'}
         >
           Disconnect
-        </button>
+        </Button>
       ) : (
-        <button
-          type="button"
+        <Button
+          icon="plug"
           className="primary"
           onClick={() => printerService.connect(transport)}
           disabled={busy}
         >
           Connect
-        </button>
+        </Button>
       )}
     </div>
   )

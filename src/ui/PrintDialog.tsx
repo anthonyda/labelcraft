@@ -10,6 +10,7 @@ import { EmulatedD110MClient, receivedPageToCanvas } from '../printer/emulator'
 import { PrintCancelledError } from '../printer/printerService'
 import { printerService, usePrinter } from '../printer/usePrinter'
 import { renderLabel, type RenderWarning } from '../render/renderLabel'
+import { Button } from './icons'
 
 const LABEL_TYPES: [LabelType, string][] = [
   [LabelType.WithGaps, 'Labels with gaps'],
@@ -268,22 +269,24 @@ export function PrintDialog({
 
       <div className="actions">
         {printing ? (
-          <button type="button" onClick={() => printerService.cancelPrint()}>
+          <Button icon="stop" onClick={() => printerService.cancelPrint()}>
             Cancel print
-          </button>
+          </Button>
         ) : (
-          <button
-            type="button"
+          <Button
+            icon={connected ? 'printer' : 'plug'}
             className="primary"
             onClick={print}
             disabled={!connected || !preview}
             autoFocus
           >
             {connected ? 'Print' : 'Connect a printer first'}
-          </button>
+          </Button>
         )}
         <form method="dialog">
-          <button>Close</button>
+          <Button icon="close" type="submit">
+            Close
+          </Button>
         </form>
       </div>
     </dialog>

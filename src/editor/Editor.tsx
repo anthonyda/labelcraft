@@ -6,6 +6,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { pxToMm } from '../model/units'
 import type { AutosaveStatus } from '../storage/useAutosave'
+import { Icon, Logo, type IconName } from '../ui/icons'
 import { Sheet } from '../ui/Sheet'
 import { PHONE_QUERY, useMediaQuery } from '../ui/useMediaQuery'
 import { AddMenu } from './AddMenu'
@@ -74,11 +75,11 @@ function StatusLine() {
 
 type Panel = 'labels' | 'add' | 'edit' | 'properties'
 
-const PANELS: [Panel, string][] = [
-  ['labels', 'Labels'],
-  ['add', 'Add'],
-  ['edit', 'Edit'],
-  ['properties', 'Properties'],
+const PANELS: [Panel, string, IconName][] = [
+  ['labels', 'Labels', 'labels'],
+  ['add', 'Add', 'add'],
+  ['edit', 'Edit', 'edit'],
+  ['properties', 'Properties', 'properties'],
 ]
 
 export function Editor({
@@ -128,7 +129,10 @@ export function Editor({
   return (
     <div className={`app ${phone ? 'phone' : 'desktop'}`}>
       <header className="app-header">
-        <h1 className="brand">labelcraft</h1>
+        <h1 className="brand">
+          <Logo />
+          labelcraft
+        </h1>
         <FileStatus autosave={autosave} />
         <div className="header-actions">{headerActions}</div>
       </header>
@@ -186,7 +190,7 @@ export function Editor({
             <PropertiesPanel />
           </Sheet>
           <nav className="bottom-bar" aria-label="Editor panels">
-            {PANELS.map(([p, name]) => (
+            {PANELS.map(([p, name, icon]) => (
               <button
                 key={p}
                 type="button"
@@ -195,6 +199,7 @@ export function Editor({
                 className={panel === p ? 'active' : undefined}
                 onClick={() => togglePanel(p)}
               >
+                <Icon name={icon} />
                 {name}
               </button>
             ))}
