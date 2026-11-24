@@ -5,7 +5,9 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react'
-import type { LabelObject } from '../model/types'
+import type { LabelDoc, LabelObject } from '../model/types'
+import { labelSizePx } from '../model/units'
+import { objectInkOutside } from '../render/inkBounds'
 import { renderObject, type ObjectBitmap } from '../render/renderObject'
 import type { EditorState, EditorStore } from './store'
 
@@ -56,4 +58,34 @@ export const useObjectBitmap = (
     // eslint-disable-next-line react-hooks/exhaustive-deps -- key covers o
   }, [key])
   return bitmap
+}
+
+/**
+ * R19: ids of objects whose ink goes past the label edge, from the same
+ * bitmaps the editor shows. Keeps the last answer while bitmaps update.
+ */
+export const useObjectsOutside = (doc: LabelDoc): string[] => {
+  const [outside, setOutside] = useState<string[]>([])
+  useEffect(() => {
+    let current = true
+    const dpi = doc.label.dpi
+    const label = labelSizePx(doc.label)
+    Promise.all(doc.objects.map((o) => cachedBitmap(o, dpi))).then(
+      (bitmaps) => {
+        if (!current) return
+        const ids = doc.objects
+          .filter((o, i) => objectInkOutside(o, bitmaps[i].canvas, dpi, label))
+          .map((o) => o.id)
+        setOutside((prev) =>
+          prev.length === ids.length && prev.every((id, i) => id === ids[i])
+            ? prev
+            : ids,
+        )
+      },
+    )
+    return () => {
+      current = false
+    }
+  }, [doc])
+  return outside
 }

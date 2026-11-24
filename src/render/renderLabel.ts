@@ -8,6 +8,7 @@ import Konva from 'konva'
 import type { LabelDoc } from '../model/types'
 import { labelSizePx } from '../model/units'
 import { DEFAULT_THRESHOLD, thresholdPixels } from './bitmap'
+import { objectInkOutside } from './inkBounds'
 import { objectPixelBox, renderObject } from './renderObject'
 
 export { textFontStyle } from './renderObject'
@@ -17,6 +18,8 @@ export type RenderWarning = { objectId: string; message: string }
 export type RenderResult = {
   canvas: HTMLCanvasElement
   warnings: RenderWarning[]
+  /** Ids of objects whose ink goes past the label edge (R19). */
+  outside: string[]
 }
 
 export const renderLabel = async (
@@ -67,7 +70,12 @@ export const renderLabel = async (
     const pixels = ctx.getImageData(0, 0, width, height)
     thresholdPixels(pixels, threshold)
     ctx.putImageData(pixels, 0, 0)
-    return { canvas, warnings }
+    const outside = doc.objects
+      .filter((o, i) =>
+        objectInkOutside(o, bitmaps[i].canvas, dpi, { width, height }),
+      )
+      .map((o) => o.id)
+    return { canvas, warnings, outside }
   } finally {
     stage.destroy()
   }

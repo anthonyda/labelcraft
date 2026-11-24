@@ -146,24 +146,3 @@ export const setLabelSetup = (
   doc: LabelDoc,
   label: Partial<LabelSetup>,
 ): LabelDoc => ({ ...doc, label: { ...doc.label, ...label } })
-
-/** True when a box (mm, label coordinates) goes past the label edge (R19). */
-export const boundsOutside = (
-  b: Bounds,
-  label: { widthMm: number; heightMm: number; dpi: number },
-): boolean => {
-  // Up to half a printer dot past the edge does not count (R19.AC1).
-  const tol = 25.4 / label.dpi / 2
-  return (
-    b.left < -tol ||
-    b.top < -tol ||
-    b.right > label.widthMm + tol ||
-    b.bottom > label.heightMm + tol
-  )
-}
-
-/** R19.AC1, AC4: ids of objects whose box goes past the label edge. */
-export const objectsOutside = (doc: LabelDoc): string[] =>
-  doc.objects
-    .filter((o) => boundsOutside(boundingBox(o), doc.label))
-    .map((o) => o.id)

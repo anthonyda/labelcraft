@@ -4,7 +4,6 @@
  * tools live in a bottom bar whose panels open as bottom sheets (R15).
  */
 import { useEffect, useState, type ReactNode } from 'react'
-import { objectsOutside } from '../model/ops'
 import { pxToMm } from '../model/units'
 import type { AutosaveStatus } from '../storage/useAutosave'
 import { Sheet } from '../ui/Sheet'
@@ -17,7 +16,7 @@ import { imageObjectFromFile, isImageFile } from './images'
 import { PropertiesPanel } from './PropertiesPanel'
 import { commandForKey, isTypingTarget, type Command } from './shortcuts'
 import type { EditorStore } from './store'
-import { useEditorState, useEditorStore } from './useEditor'
+import { useEditorState, useEditorStore, useObjectsOutside } from './useEditor'
 
 const run = (store: EditorStore, c: Command) => {
   switch (c.type) {
@@ -49,7 +48,7 @@ function StatusLine() {
   const doc = history.present
   const selected = doc.objects.filter((o) => selection.includes(o.id))
   const one = selected.length === 1 ? selected[0] : undefined
-  const outside = objectsOutside(doc).length
+  const outside = useObjectsOutside(doc).length
   return (
     <div className="status-line">
       <span id="editor-title" className="label-size">

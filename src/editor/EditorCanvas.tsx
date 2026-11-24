@@ -4,15 +4,21 @@
  * matches the print (C7). Coordinates inside the stage are printer pixels.
  */
 import type Konva from 'konva'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Image, Layer, Rect, Stage, Transformer } from 'react-konva'
-import { boundingBox, objectsOutside } from '../model/ops'
+import { boundingBox } from '../model/ops'
 import type { LabelObject, TextObject } from '../model/types'
 import { labelSizePx, mmToPx, ptToPx, pxToMm } from '../model/units'
+import { inkOutsideBox } from '../render/inkBounds'
 import { objectPixelBox } from '../render/renderObject'
 import { COARSE_POINTER_QUERY, useMediaQuery } from '../ui/useMediaQuery'
 import type { ObjectPatch } from './store'
-import { useEditorState, useEditorStore, useObjectBitmap } from './useEditor'
+import {
+  useEditorState,
+  useEditorStore,
+  useObjectBitmap,
+  useObjectsOutside,
+} from './useEditor'
 import { ZOOM_MAX, ZOOM_MIN } from './zoom'
 
 /** Minimum screen px around the label. */
@@ -50,19 +56,15 @@ function ObjectNode({
   // R19.AC1: keep the red outline up to date while dragging or resizing.
   const liveCheck = (e: Konva.KonvaEventObject<Event>) => {
     const n = e.target as Konva.Image
-    if (n.id() !== o.id) return
-    const w = n.width() * Math.abs(n.scaleX())
-    const h = n.height() * Math.abs(n.scaleY())
-    const rad = (n.rotation() * Math.PI) / 180
-    const cos = Math.abs(Math.cos(rad))
-    const sin = Math.abs(Math.sin(rad))
-    const halfW = (w * cos + h * sin) / 2
-    const halfH = (w * sin + h * cos) / 2
-    const out =
-      n.x() - halfW < -0.5 ||
-      n.y() - halfH < -0.5 ||
-      n.x() + halfW > labelPx.width + 0.5 ||
-      n.y() + halfH > labelPx.height + 0.5
+    if (n.id() !== o.id || !bitmap) return
+    const width = n.width() * Math.abs(n.scaleX())
+    const height = n.height() * Math.abs(n.scaleY())
+    const out = inkOutsideBox(
+      bitmap.canvas,
+      { x: n.x() - width / 2, y: n.y() - height / 2, width, height },
+      n.rotation(),
+      labelPx,
+    )
     n.stroke(out ? OUTSIDE_COLOR : '')
     n.strokeEnabled(out)
   }
@@ -173,7 +175,7 @@ export function EditorCanvas({
   const doc = history.present
   const dpi = doc.label.dpi
   const label = labelSizePx(doc.label)
-  const outside = useMemo(() => objectsOutside(doc), [doc])
+  const outside = useObjectsOutside(doc)
 
   const wrapperRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<Konva.Stage>(null)

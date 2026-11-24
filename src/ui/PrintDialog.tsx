@@ -5,7 +5,6 @@ import {
   type PrintTaskName,
 } from '@mmote/niimbluelib'
 import { useEffect, useRef, useState } from 'react'
-import { objectsOutside } from '../model/ops'
 import type { LabelDoc } from '../model/types'
 import { EmulatedD110MClient, receivedPageToCanvas } from '../printer/emulator'
 import { PrintCancelledError } from '../printer/printerService'
@@ -65,6 +64,7 @@ export function PrintDialog({
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [preview, setPreview] = useState<HTMLCanvasElement>()
   const [warnings, setWarnings] = useState<RenderWarning[]>([])
+  const [outside, setOutside] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [density, setDensity] = useState<number>()
   // R18.AC5: the loaded roll's type is the default until the user picks one.
@@ -80,7 +80,6 @@ export function PrintDialog({
     (rollType && LABEL_TYPES.some(([t]) => t === rollType)
       ? rollType
       : LabelType.WithGaps)
-  const outside = objectsOutside(doc).length
   const densityValue = density ?? model?.densityDefault ?? 3
   const printing = state.status === 'printing'
   const connected = state.status === 'connected'
@@ -96,10 +95,11 @@ export function PrintDialog({
   useEffect(() => {
     if (!open) return
     let current = true
-    renderLabel(doc).then(({ canvas, warnings }) => {
+    renderLabel(doc).then(({ canvas, warnings, outside }) => {
       if (!current) return
       setPreview(canvas)
       setWarnings(warnings)
+      setOutside(outside.length)
     })
     return () => {
       current = false

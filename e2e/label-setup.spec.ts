@@ -173,6 +173,20 @@ test('objects outside the label are outlined and warned about', async ({
   page,
 }) => {
   expect(await redPixels(page)).toBe(0)
+
+  // R19.AC4: a text box far past the edge, with its text inside, is fine.
+  await clickAt(page, TEXT)
+  await expect(status(page)).toContainText('text at')
+  await openPanel(page, 'Properties')
+  await props(page).getByLabel('Height (mm)').fill('30')
+  await expect(status(page)).toContainText('× 30.0 mm')
+  await page.waitForTimeout(300)
+  await expect(status(page)).not.toContainText('outside the label')
+  await expect(page.getByTestId('editor-canvas')).toHaveAttribute(
+    'data-outside',
+    '',
+  )
+
   await clickAt(page, QR)
   await expect(status(page)).toContainText('1 selected')
   await openPanel(page, 'Properties')
