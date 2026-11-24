@@ -590,3 +590,14 @@ fieldset,
   width: 22px;
   height: 22px;
 }
+
+/* Desktop toolbar: one row per button group (exploring, after M6c) */
+.desktop .toolbar {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.desktop .toolbar .group {
+  flex-wrap: nowrap;
+}
