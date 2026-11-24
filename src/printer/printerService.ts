@@ -7,13 +7,18 @@ import {
   ImageEncoder,
   LabelType,
   PageColorType,
+  findPrintTask,
+  getPrinterMetaByModel,
   instantiateClient,
+  type CombinedRfidInfo,
   type NiimbotAbstractClient,
   type PrintProgressEvent,
   type PrintPacketProgressEvent,
   type PrintTaskName,
+  type PrinterModel,
   type PrinterModelMeta,
 } from '@mmote/niimbluelib'
+import { localSettings, type SettingStore } from '../storage/settings'
 import type { Transport } from './capabilities'
 import { EmulatedD110MClient, type EmulatorOptions } from './emulator'
 
@@ -22,12 +27,27 @@ export type PrinterStatus =
 
 export type PrintProgress = { phase: 'send' | 'print'; percent: number }
 
+/** What the printer reported about the loaded roll (R18). */
+export type LoadedRoll = {
+  /** Roll width × label length in mm, when the printer reports them. */
+  size?: { widthMm: number; lengthMm: number }
+  labelType?: LabelType
+  /** From the roll's RFID tag, when present. */
+  labelsLeft?: number
+}
+
 export type PrinterState = {
   status: PrinterStatus
   transport?: Transport
   deviceName?: string
   /** Detected model, or undefined when unknown (R2.AC2). */
   model?: PrinterModelMeta
+  /** Model chosen by the user, remembered between visits (R17.AC2, AC5). */
+  chosen?: PrinterModelMeta
+  /** Set when a detected model replaced a different chosen one (R17.AC3). */
+  modelNotice?: string
+  /** Loaded roll, read on connect and on request (R18.AC1). */
+  roll?: LoadedRoll
   /** Print task detected for the model, if any (R11.AC3). */
   printTask?: PrintTaskName
   progress?: PrintProgress
@@ -67,6 +87,46 @@ type Listener = (state: PrinterState) => void
 const errorMessage = (e: unknown): string =>
   e instanceof Error ? e.message : String(e)
 
+export type ModelSource = 'detected' | 'chosen'
+
+/**
+ * R17: the model the app lays labels out for: the detected one while
+ * connected, else the chosen one.
+ */
+export const knownModel = (
+  state: PrinterState,
+): { meta: PrinterModelMeta; source: ModelSource } | undefined => {
+  if (state.model) return { meta: state.model, source: 'detected' }
+  if (state.chosen) return { meta: state.chosen, source: 'chosen' }
+  return undefined
+}
+
+const LABEL_TYPES = new Set<number>(
+  Object.values(LabelType).filter((v): v is number => typeof v === 'number'),
+)
+
+/** R18.AC2, AC5, AC6: read what the printer said about its roll. */
+export const rollFromRfid = (info: CombinedRfidInfo): LoadedRoll => {
+  const roll: LoadedRoll = {}
+  const paper = info.paperInfo
+  if (paper?.valid && paper.paperWidth && paper.paperHeight) {
+    roll.size = { widthMm: paper.paperWidth, lengthMm: paper.paperHeight }
+  }
+  const tag = info.labelRfidInfo
+  const type =
+    paper?.valid && paper.paperType ? paper.paperType : tag?.consumablesType
+  // 0 (Invalid) means unknown.
+  if (type && LABEL_TYPES.has(type)) {
+    roll.labelType = type
+  }
+  if (tag?.tagPresent && tag.allPaper >= 0 && tag.usedPaper >= 0) {
+    roll.labelsLeft = Math.max(0, tag.allPaper - tag.usedPaper)
+  }
+  return roll
+}
+
+const MODEL_SETTING = 'printerModel'
+
 export class PrinterService {
   private state: PrinterState = { status: 'disconnected' }
   private listeners = new Set<Listener>()
@@ -74,9 +134,19 @@ export class PrinterService {
   private cancelRequested?: () => void
 
   private readonly createClient: ClientFactory
+  private readonly settings: SettingStore
 
-  constructor(createClient: ClientFactory = defaultClientFactory) {
+  constructor(
+    createClient: ClientFactory = defaultClientFactory,
+    settings: SettingStore = localSettings,
+  ) {
     this.createClient = createClient
+    this.settings = settings
+    const saved = settings.get(MODEL_SETTING)
+    const chosen = saved
+      ? getPrinterMetaByModel(saved as PrinterModel)
+      : undefined
+    this.state = { status: 'disconnected', chosen }
   }
 
   getState = (): PrinterState => this.state
@@ -92,9 +162,45 @@ export class PrinterService {
     return this.client
   }
 
+  /** `replace` resets the connection state but keeps the chosen model. */
   private set(patch: Partial<PrinterState>, replace = false) {
-    this.state = replace ? (patch as PrinterState) : { ...this.state, ...patch }
+    this.state = replace
+      ? ({ chosen: this.state.chosen, ...patch } as PrinterState)
+      : { ...this.state, ...patch }
     this.listeners.forEach((l) => l(this.state))
+  }
+
+  /** The print task for a model, if the library knows one. */
+  private taskFor(meta?: PrinterModelMeta): PrintTaskName | undefined {
+    if (!meta) return undefined
+    return findPrintTask(
+      meta.model,
+      this.client?.getPrinterInfo().protocolVersion,
+    )
+  }
+
+  /**
+   * R17.AC2, AC4, AC5: choose the model (undefined = any printer). While a
+   * printer is connected with an undetected model, it also sets the print task.
+   */
+  setChosenModel(model: string | undefined): void {
+    const chosen = model
+      ? getPrinterMetaByModel(model as PrinterModel)
+      : undefined
+    this.settings.set(MODEL_SETTING, chosen?.model)
+    const patch: Partial<PrinterState> = { chosen, modelNotice: undefined }
+    if (this.state.status !== 'disconnected' && !this.state.model) {
+      patch.printTask = this.client?.getPrintTaskType() ?? this.taskFor(chosen)
+    }
+    this.set(patch)
+  }
+
+  /** R18.AC1: ask the printer about the loaded roll again. */
+  async readRoll(): Promise<void> {
+    const client = this.client
+    if (!client || this.state.status !== 'connected') return
+    const info = await client.fetchRfidInfo()
+    if (this.client === client) this.set({ roll: rollFromRfid(info) })
   }
 
   /** R2.AC1–AC3: opens the browser device picker for real transports. */
@@ -120,12 +226,25 @@ export class PrinterService {
 
     try {
       const info = await client.connect()
-      this.set({
+      const detected = client.getModelMetadata()
+      const chosen = this.state.chosen
+      const patch: Partial<PrinterState> = {
         status: 'connected',
         deviceName: info.deviceName ?? 'Unknown printer',
-        model: client.getModelMetadata(),
-        printTask: client.getPrintTaskType(),
-      })
+        model: detected,
+        printTask: client.getPrintTaskType() ?? this.taskFor(chosen),
+        // The library reads the roll while connecting (fetchRfidInfo).
+        roll: rollFromRfid(client.getRfidInfo()),
+      }
+      // R17.AC3: the detected model replaces the chosen one.
+      if (detected) {
+        if (chosen && chosen.model !== detected.model) {
+          patch.modelNotice = `Detected ${detected.model}; it replaces the ${chosen.model} you had chosen.`
+        }
+        patch.chosen = detected
+        this.settings.set(MODEL_SETTING, detected.model)
+      }
+      this.set(patch)
     } catch (e) {
       this.client = undefined
       await client.disconnect().catch(() => undefined)

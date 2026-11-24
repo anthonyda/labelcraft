@@ -13,6 +13,21 @@ describe('serialize', () => {
     expect(fromJson(toJson(doc))).toEqual(doc)
   })
 
+  // T6b.2 / R12.AC5: the chosen size entry is kept; older labels still load.
+  it('keeps the label size entry, and loads labels saved without one', () => {
+    const doc = newDoc()
+    doc.label.size = 'D-12x40'
+    expect(fromJson(toJson(doc)).label.size).toBe('D-12x40')
+    const old = JSON.stringify({
+      version: 1,
+      label: { widthMm: 30, heightMm: 12, dpi: 203 },
+      objects: [],
+    })
+    expect(fromJson(old).label.size).toBeUndefined()
+    const bad = JSON.stringify({ ...doc, label: { ...doc.label, size: 3 } })
+    expect(() => fromJson(bad)).toThrow(/not a labelcraft label/)
+  })
+
   it('rejects invalid JSON', () => {
     expect(() => fromJson('not json')).toThrow(/not valid JSON/)
   })

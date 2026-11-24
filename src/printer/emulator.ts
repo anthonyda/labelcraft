@@ -14,6 +14,7 @@ import {
   ConnectEvent,
   ConnectResult,
   DisconnectEvent,
+  LabelType,
   NiimbotAbstractClient,
   NiimbotPacket,
   PacketParser,
@@ -47,6 +48,63 @@ export type EmulatorOptions = {
   errorCode?: number
   /** Report the lid as open in heartbeats. */
   lidOpen?: boolean
+  /** Model id to report (default 2320, D110_M); unknown ids test R17.AC4. */
+  modelId?: number
+  /**
+   * Loaded roll to report (R18.AC7); null = the printer reports none.
+   * Default: 12 × 40 mm labels with gaps, 155 per roll, 10 used.
+   */
+  roll?: EmulatedRoll | null
+}
+
+export type EmulatedRoll = {
+  widthMm: number
+  lengthMm: number
+  gapMm: number
+  labelType: LabelType
+  total: number
+  used: number
+}
+
+export const DEFAULT_ROLL: EmulatedRoll = {
+  widthMm: 12,
+  lengthMm: 40,
+  gapMm: 4,
+  labelType: LabelType.WithGaps,
+  total: 155,
+  used: 10,
+}
+
+const dots = (mm: number) => Math.round((mm * 203) / 25.4)
+const tenths = (mm: number) => Math.round(mm * 10)
+
+/** GetPaperInfo answer: the 18-byte form niimbluelib parses (R18). */
+const paperInfoAnswer = (roll: EmulatedRoll): number[] => [
+  ...Utils.u16ToBytes(dots(roll.gapMm)),
+  ...Utils.u16ToBytes(dots(roll.lengthMm)),
+  roll.labelType,
+  ...Utils.u16ToBytes(tenths(roll.gapMm)),
+  ...Utils.u16ToBytes(tenths(roll.lengthMm)),
+  ...Utils.u16ToBytes(dots(roll.widthMm)),
+  ...Utils.u16ToBytes(tenths(roll.widthMm)),
+  0, // direction
+  0,
+  0, // tail length (dots)
+  0,
+  0, // tail length (0.1 mm)
+]
+
+/** RFID answer for a NIIMBOT roll tag. */
+const rfidAnswer = (roll: EmulatedRoll): number[] => {
+  const text = (t: string) => [t.length, ...new TextEncoder().encode(t)]
+  return [
+    ...[0xe0, 0x04, 0x01, 0x50, 0x12, 0x34, 0x56, 0x78], // uuid
+    ...text('6972842743589'), // barcode
+    ...text('EMULATEDROLL'), // serial number
+    ...Utils.u16ToBytes(roll.total),
+    ...Utils.u16ToBytes(roll.used),
+    roll.labelType,
+  ]
 }
 
 const hex = (s: string) => Utils.hexToBuf(s)
@@ -66,8 +124,6 @@ const STATIC_ANSWERS: Record<string, [RX, Uint8Array]> = {
       '010100020101030100040200c80501010602040007020501080205010904000000170a0200600b0206400c01010d01020e01010f0103100101110204011201001302000014010315010016010017010118050107000000190101',
     ),
   ],
-  // PrinterInfo: model id 2320 (D110_M)
-  [`${TX.PrinterInfo}:8`]: [RX.In_PrinterInfoPrinterCode, hex('0910')],
   // PrinterInfo: serial number "EMULATED01"
   [`${TX.PrinterInfo}:11`]: [
     RX.In_PrinterInfoSerialNumber,
@@ -81,8 +137,6 @@ const STATIC_ANSWERS: Record<string, [RX, Uint8Array]> = {
   [`${TX.PrinterInfo}:15`]: [RX.In_PrinterInfoArea, hex('0001')],
   // Heartbeat (printer info): hw 4.01, fw 4.23, printhead 96 px, 203 dpi
   [`${TX.Heartbeat}:3`]: [RX.In_HeartbeatBasic, hex('04010417006002020100')],
-  // No RFID tag on the label roll
-  [`${TX.RfidInfo}`]: [RX.In_RfidInfo, hex('00')],
   // Print settings acknowledged
   [`${TX.SetLabelType}`]: [RX.In_SetLabelType, hex('01')],
   [`${TX.SetDensity}`]: [RX.In_SetDensity, hex('01')],
@@ -121,6 +175,8 @@ export class EmulatedD110MClient extends NiimbotAbstractClient {
       pageMs: 800,
       errorCode: 1,
       lidOpen: false,
+      modelId: 2320,
+      roll: DEFAULT_ROLL,
       ...options,
     }
     this.setPacketInterval(0)
@@ -196,6 +252,25 @@ export class EmulatedD110MClient extends NiimbotAbstractClient {
     }
 
     switch (cmd) {
+      case TX.PrinterInfo:
+        // Model id (others come from STATIC_ANSWERS)
+        if (d[0] === 8) {
+          return reply(
+            RX.In_PrinterInfoPrinterCode,
+            Utils.u16ToBytes(this.options.modelId),
+          )
+        }
+        break
+      case TX.GetPaperInfo: {
+        const roll = this.options.roll
+        return roll
+          ? reply(RX.In_GetPaperInfo, paperInfoAnswer(roll))
+          : reply(RX.In_GetPaperInfo, [0, 0, 0, 0])
+      }
+      case TX.RfidInfo: {
+        const roll = this.options.roll
+        return reply(RX.In_RfidInfo, roll ? rfidAnswer(roll) : [0])
+      }
       case TX.Heartbeat:
         if (d[0] === 4 || d[0] === 1) {
           // Advanced2: battery, temperature, lid (0 = closed), paper (0 = in)

@@ -31,6 +31,7 @@ export const parseDoc = (data: unknown): LabelDoc => {
     !isFiniteNumber(label.widthMm) ||
     !isFiniteNumber(label.heightMm) ||
     !isFiniteNumber(label.dpi) ||
+    (label.size !== undefined && typeof label.size !== 'string') ||
     !Array.isArray(d.objects)
   ) {
     throw new Error('The file is not a labelcraft label.')

@@ -63,9 +63,10 @@ test('prints to the emulated D110_M and shows matching output', async ({
   await printer.getByRole('button', { name: 'Disconnect' }).click()
   await expect(printer.getByText('Not connected.')).toBeVisible()
   await printer.getByRole('button', { name: 'Done' }).click()
-  await expect(
-    page.getByRole('button', { name: 'Printer: Not connected' }),
-  ).toBeVisible()
+  // R17.AC3, AC6: the detected model stays as the chosen one.
+  await expect(page.getByRole('button', { name: /^Printer:/ })).toHaveText(
+    'Printer: D110_Mchosen, not connected',
+  )
 })
 
 // R11.AC1: print stays disabled while disconnected.

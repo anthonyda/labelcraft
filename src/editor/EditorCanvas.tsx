@@ -4,9 +4,9 @@
  * matches the print (C7). Coordinates inside the stage are printer pixels.
  */
 import type Konva from 'konva'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Image, Layer, Rect, Stage, Transformer } from 'react-konva'
-import { boundingBox } from '../model/ops'
+import { boundingBox, objectsOutside } from '../model/ops'
 import type { LabelObject, TextObject } from '../model/types'
 import { labelSizePx, mmToPx, ptToPx, pxToMm } from '../model/units'
 import { objectPixelBox } from '../render/renderObject'
@@ -18,6 +18,9 @@ import { ZOOM_MAX, ZOOM_MIN } from './zoom'
 /** Minimum screen px around the label. */
 export const CANVAS_PADDING = 16
 
+/** Outline of objects that go past the label edge (R19.AC1). */
+const OUTSIDE_COLOR = '#dc2626'
+
 type Band = { x1: number; y1: number; x2: number; y2: number }
 
 function ObjectNode({
@@ -28,10 +31,15 @@ function ObjectNode({
   onDragEnd,
   onTransformEnd,
   onEdit,
+  outside,
+  labelPx,
 }: {
   o: LabelObject
   dpi: number
   hidden: boolean
+  /** R19.AC1: the object goes past the label edge. */
+  outside: boolean
+  labelPx: { width: number; height: number }
   onPointerDown: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void
   onDragEnd: () => void
   onTransformEnd: () => void
@@ -39,10 +47,28 @@ function ObjectNode({
 }) {
   const bitmap = useObjectBitmap(o, dpi)
   const box = objectPixelBox(o, dpi)
+  // R19.AC1: keep the red outline up to date while dragging or resizing.
+  const liveCheck = (e: Konva.KonvaEventObject<Event>) => {
+    const n = e.target as Konva.Image
+    if (n.id() !== o.id) return
+    const w = n.width() * Math.abs(n.scaleX())
+    const h = n.height() * Math.abs(n.scaleY())
+    const rad = (n.rotation() * Math.PI) / 180
+    const cos = Math.abs(Math.cos(rad))
+    const sin = Math.abs(Math.sin(rad))
+    const halfW = (w * cos + h * sin) / 2
+    const halfH = (w * sin + h * cos) / 2
+    const out =
+      n.x() - halfW < -0.5 ||
+      n.y() - halfH < -0.5 ||
+      n.x() + halfW > labelPx.width + 0.5 ||
+      n.y() + halfH > labelPx.height + 0.5
+    n.stroke(out ? OUTSIDE_COLOR : '')
+    n.strokeEnabled(out)
+  }
   return (
     <Image
       id={o.id}
-      name="object"
       image={bitmap?.canvas}
       x={box.x + box.width / 2}
       y={box.y + box.height / 2}
@@ -55,8 +81,15 @@ function ObjectNode({
       draggable
       onMouseDown={onPointerDown}
       onTouchStart={onPointerDown}
+      onDragMove={liveCheck}
+      onTransform={liveCheck}
       onDragEnd={onDragEnd}
       onTransformEnd={onTransformEnd}
+      stroke={outside ? OUTSIDE_COLOR : ''}
+      strokeEnabled={outside}
+      strokeWidth={2}
+      strokeScaleEnabled={false}
+      name={outside ? 'object outside' : 'object'}
       onDblClick={onEdit}
       onDblTap={onEdit}
     />
@@ -140,6 +173,7 @@ export function EditorCanvas({
   const doc = history.present
   const dpi = doc.label.dpi
   const label = labelSizePx(doc.label)
+  const outside = useMemo(() => objectsOutside(doc), [doc])
 
   const wrapperRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<Konva.Stage>(null)
@@ -409,6 +443,7 @@ export function EditorCanvas({
       data-scale={scale}
       data-origin-x={origin.x}
       data-origin-y={origin.y}
+      data-outside={outside.join(' ')}
     >
       <Stage
         ref={stageRef}
@@ -440,6 +475,8 @@ export function EditorCanvas({
               key={o.id}
               o={o}
               dpi={dpi}
+              outside={outside.includes(o.id)}
+              labelPx={label}
               hidden={o.id === editingId}
               onPointerDown={onObjectDown(o.id)}
               onDragEnd={commitOnce}
@@ -458,6 +495,17 @@ export function EditorCanvas({
               }}
             />
           ))}
+          {/* R19.AC1: the label edge stays visible over objects. */}
+          <Rect
+            name="label-edge"
+            width={label.width}
+            height={label.height}
+            stroke="#94a3b8"
+            strokeWidth={1}
+            strokeScaleEnabled={false}
+            fillEnabled={false}
+            listening={false}
+          />
           <Transformer
             ref={trRef}
             rotationSnaps={[0, 90, 180, 270]}

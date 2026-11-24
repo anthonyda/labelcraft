@@ -1,5 +1,8 @@
-/** Connect / disconnect (T2.4, R1, R2, R16). */
+/** Connect / disconnect (T2.4, R1, R2, R16), printer model (R17), roll (R18). */
+import { LabelType, modelsLibrary } from '@mmote/niimbluelib'
 import { useMemo, useState } from 'react'
+import { RollOffer } from '../editor/RollOffer'
+import { FAMILIES, FAMILY_ORDER, familyOfModel } from '../model/labelSizes'
 import {
   availableTransports,
   canPrintToHardware,
@@ -7,6 +10,88 @@ import {
   type Transport,
 } from '../printer/capabilities'
 import { printerService, usePrinter } from '../printer/usePrinter'
+
+/** Library models grouped by size family (R17.AC2). */
+const MODEL_GROUPS: [string, string[]][] = (() => {
+  const names = modelsLibrary
+    .map((m) => m.model as string)
+    .filter((m) => m !== 'UNKNOWN')
+    .sort()
+  const groups: [string, string[]][] = FAMILY_ORDER.map((f) => [
+    FAMILIES[f].name,
+    names.filter((m) => familyOfModel(m) === f),
+  ])
+  groups.push(['Other models', names.filter((m) => !familyOfModel(m))])
+  return groups
+})()
+
+const LABEL_TYPE_NAMES: Partial<Record<LabelType, string>> = {
+  [LabelType.WithGaps]: 'labels with gaps',
+  [LabelType.Black]: 'black mark',
+  [LabelType.Continuous]: 'continuous',
+  [LabelType.Transparent]: 'transparent labels',
+}
+
+function ModelPicker() {
+  const state = usePrinter()
+  const detected = state.model
+  const id = 'printer-model'
+  return (
+    <div className="field">
+      <label htmlFor={id}>Printer model</label>
+      <select
+        id={id}
+        value={detected?.model ?? state.chosen?.model ?? ''}
+        disabled={!!detected || state.status === 'printing'}
+        onChange={(e) =>
+          printerService.setChosenModel(e.target.value || undefined)
+        }
+      >
+        <option value="">Any printer</option>
+        {MODEL_GROUPS.map(([group, models]) => (
+          <optgroup key={group} label={group}>
+            {models.map((m) => (
+              <option key={m} value={m}>
+                {m}
+                {detected?.model === m ? ' (detected)' : ''}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+    </div>
+  )
+}
+
+function RollInfo() {
+  const state = usePrinter()
+  const roll = state.roll
+  if (state.status !== 'connected' && state.status !== 'printing') return null
+  const type = roll?.labelType && LABEL_TYPE_NAMES[roll.labelType]
+  return (
+    <div className="roll-info">
+      {roll?.size ? (
+        <p className="status" data-testid="loaded-roll">
+          Loaded roll: {roll.size.widthMm} × {roll.size.lengthMm} mm
+          {type && `, ${type}`}
+          {roll.labelsLeft !== undefined && ` · ${roll.labelsLeft} labels left`}
+        </p>
+      ) : (
+        <p className="status" data-testid="loaded-roll">
+          This printer didn't report the loaded roll.
+        </p>
+      )}
+      <button
+        type="button"
+        onClick={() => printerService.readRoll()}
+        disabled={state.status !== 'connected'}
+      >
+        Read roll
+      </button>
+      <RollOffer />
+    </div>
+  )
+}
 
 const TRANSPORT_LABELS: Record<Transport, string> = {
   bluetooth: 'Bluetooth',
@@ -61,10 +146,23 @@ export function ConnectPanel() {
               <span className="badge">Emulated</span>
             )}
             {' · '}
-            {state.model ? state.model.model : 'unknown model'}
+            {state.model
+              ? state.model.model
+              : state.chosen
+                ? `model not recognised, using ${state.chosen.model}`
+                : 'unknown model'}
           </>
         )}
       </p>
+
+      {state.modelNotice && connected && (
+        <p className="notice-model" role="status">
+          {state.modelNotice}
+        </p>
+      )}
+
+      <ModelPicker />
+      <RollInfo />
 
       {state.status === 'disconnected' && state.error && (
         <p className="error" role="alert">

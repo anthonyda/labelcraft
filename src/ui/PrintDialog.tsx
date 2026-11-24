@@ -5,6 +5,7 @@ import {
   type PrintTaskName,
 } from '@mmote/niimbluelib'
 import { useEffect, useRef, useState } from 'react'
+import { objectsOutside } from '../model/ops'
 import type { LabelDoc } from '../model/types'
 import { EmulatedD110MClient, receivedPageToCanvas } from '../printer/emulator'
 import { PrintCancelledError } from '../printer/printerService'
@@ -66,12 +67,20 @@ export function PrintDialog({
   const [warnings, setWarnings] = useState<RenderWarning[]>([])
   const [quantity, setQuantity] = useState(1)
   const [density, setDensity] = useState<number>()
-  const [labelType, setLabelType] = useState(LabelType.WithGaps)
+  // R18.AC5: the loaded roll's type is the default until the user picks one.
+  const [labelTypeChoice, setLabelType] = useState<LabelType>()
   const [printTask, setPrintTask] = useState<PrintTaskName>('D110')
   const [output, setOutput] = useState<HTMLCanvasElement>()
   const [message, setMessage] = useState<string>()
 
-  const model = state.model
+  const model = state.model ?? state.chosen
+  const rollType = state.roll?.labelType
+  const labelType =
+    labelTypeChoice ??
+    (rollType && LABEL_TYPES.some(([t]) => t === rollType)
+      ? rollType
+      : LabelType.WithGaps)
+  const outside = objectsOutside(doc).length
   const densityValue = density ?? model?.densityDefault ?? 3
   const printing = state.status === 'printing'
   const connected = state.status === 'connected'
@@ -154,6 +163,14 @@ export function PrintDialog({
             <li key={w.objectId + w.message}>{w.message}</li>
           ))}
         </ul>
+      )}
+      {outside > 0 && (
+        <p className="warning" role="note" data-testid="outside-warning">
+          {outside === 1
+            ? '1 object goes past the label edge'
+            : `${outside} objects go past the label edge`}
+          ; the parts outside won't print.
+        </p>
       )}
       {printheadOverflow && (
         <p className="warning" role="note">

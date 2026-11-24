@@ -2,7 +2,7 @@
  * Properties panel (T4.4, R9) and label setup (T4.5, R3). Every change shows
  * on the canvas immediately; typing in one field is a single undo step.
  */
-import { useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import type {
   BarcodeFormat,
   ImageMode,
@@ -10,8 +10,16 @@ import type {
   QrErrorCorrection,
   TextAlign,
 } from '../model/types'
+import {
+  findSize,
+  headFor,
+  labelSizesFor,
+  selectedSizeId,
+  sizeName,
+  sizeToLabel,
+} from '../model/labelSizes'
 import { labelSizePx } from '../model/units'
-import { usePrinter } from '../printer/usePrinter'
+import { useKnownModel } from '../printer/usePrinter'
 import {
   CheckField,
   FieldGroup,
@@ -21,6 +29,7 @@ import {
 } from './fields'
 import { FONT_FAMILIES } from './fonts'
 import { IMAGE_ACCEPT, imageObjectFromFile } from './images'
+import { RollOffer } from './RollOffer'
 import { useEditorState, useEditorStore } from './useEditor'
 
 const TYPE_NAMES: Record<LabelObject['type'], string> = {
@@ -33,36 +42,95 @@ const TYPE_NAMES: Record<LabelObject['type'], string> = {
   barcode: 'Barcode',
 }
 
+const mm = (n: number) => String(Math.round(n * 100) / 100)
+
+/** R3.AC1, R12: official sizes grouped by family, then Custom. */
+function SizeField() {
+  const store = useEditorStore()
+  const label = useEditorState().history.present.label
+  const model = useKnownModel()
+  const id = useId()
+  const groups = labelSizesFor(model?.model)
+  const value = selectedSizeId(label, groups, model)
+  return (
+    <div className="field">
+      <label htmlFor={id}>Size</label>
+      <select
+        id={id}
+        value={value}
+        onChange={(e) => {
+          const size = findSize(e.target.value)
+          // R12.AC2: Custom starts from the current size.
+          if (!size) return store.setLabel({ size: 'custom' })
+          store.setLabel({
+            ...sizeToLabel(size, headFor(size.family, model)),
+            size: size.id,
+          })
+        }}
+      >
+        {groups.map((g) => (
+          <optgroup key={g.family} label={g.label}>
+            {g.sizes.map((s) => (
+              <option key={s.id} value={s.id}>
+                {sizeName(s, headFor(s.family, model))}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+        <option value="custom">Custom</option>
+      </select>
+    </div>
+  )
+}
+
 function LabelSetupFields() {
   const store = useEditorStore()
   const doc = useEditorState().history.present
-  const printer = usePrinter()
-  const model = printer.model
+  const model = useKnownModel()
   const { width, height } = labelSizePx(doc.label)
   // R3.AC3: the printhead spans the label height for "left" printers.
   const across = model?.printDirection === 'left' ? height : width
   const overflow = model && across > model.printheadPixels
+  const custom =
+    selectedSizeId(doc.label, labelSizesFor(model?.model), model) === 'custom'
 
   return (
     <FieldGroup title="Label">
-      <NumberField
-        label="Width"
-        unit="mm"
-        value={doc.label.widthMm}
-        min={1}
-        max={500}
-        onChange={(v) => store.setLabel({ widthMm: v }, 'label:width')}
-      />
-      <NumberField
-        label="Height"
-        unit="mm"
-        value={doc.label.heightMm}
-        min={1}
-        max={500}
-        onChange={(v) => store.setLabel({ heightMm: v }, 'label:height')}
-      />
+      <SizeField />
+      {custom ? (
+        <>
+          <NumberField
+            label="Width"
+            unit="mm"
+            value={doc.label.widthMm}
+            min={1}
+            max={500}
+            onChange={(v) =>
+              store.setLabel({ widthMm: v, size: 'custom' }, 'label:width')
+            }
+          />
+          <NumberField
+            label="Height"
+            unit="mm"
+            value={doc.label.heightMm}
+            min={1}
+            max={500}
+            onChange={(v) =>
+              store.setLabel({ heightMm: v, size: 'custom' }, 'label:height')
+            }
+          />
+        </>
+      ) : (
+        <p className="status" data-testid="label-dimensions">
+          {mm(doc.label.widthMm)} × {mm(doc.label.heightMm)} mm
+        </p>
+      )}
       <SelectField
-        label={model ? `Resolution (from ${model.model})` : 'Resolution'}
+        label={
+          model
+            ? `Resolution (from ${model.model}${model.source === 'chosen' ? ', chosen' : ''})`
+            : 'Resolution'
+        }
         value={doc.label.dpi}
         options={[
           [203, '203 dpi'],
@@ -71,6 +139,7 @@ function LabelSetupFields() {
         disabled={!!model}
         onChange={(v) => store.setLabel({ dpi: v })}
       />
+      <RollOffer />
       {overflow && (
         <p className="warning" role="note">
           This label is {across} dots across, but the {model.model}'s print head

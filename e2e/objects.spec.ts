@@ -177,6 +177,7 @@ test('label setup with printer dpi and print-head warning', async ({
 }) => {
   await openPanel(page, 'Properties')
   const label = props(page).getByRole('group', { name: 'Label' })
+  await label.getByLabel('Size').selectOption('custom')
   await label.getByLabel('Width (mm)').fill('40')
   await expect(page.locator('#editor-title')).toContainText('40 × 12 mm')
   await expect(label.getByLabel('Resolution')).toBeEnabled()

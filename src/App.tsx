@@ -1,10 +1,12 @@
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Editor } from './editor/Editor'
+import { labelForRoll, sameSize } from './editor/labelSize'
 import { EditorStore } from './editor/store'
 import { EditorContext } from './editor/useEditor'
 import { createObject, newDoc } from './model/factory'
 import type { LabelDoc, LabelObject } from './model/types'
-import { usePrinter } from './printer/usePrinter'
+import type { LoadedRoll } from './printer/printerService'
+import { useKnownModel, usePrinter } from './printer/usePrinter'
 import { useAutosave } from './storage/useAutosave'
 import { ConnectPanel } from './ui/ConnectPanel'
 import { Modal } from './ui/Modal'
@@ -36,18 +38,28 @@ const sampleLabel = (): LabelDoc => {
   return doc
 }
 
+/** R17.AC6: names the model and says if it is detected, chosen or emulated. */
 function PrinterButton({ onClick }: { onClick: () => void }) {
   const printer = usePrinter()
+  const model = useKnownModel()
   const connected =
     printer.status === 'connected' || printer.status === 'printing'
-  const text = connected
-    ? (printer.model?.model ?? printer.deviceName ?? 'Connected')
-    : printer.status === 'connecting'
+  const text =
+    printer.status === 'connecting'
       ? 'Connecting…'
-      : 'Not connected'
+      : model
+        ? model.model
+        : connected
+          ? (printer.deviceName ?? 'Connected')
+          : 'Not connected'
   return (
     <button type="button" className="printer-button" onClick={onClick}>
       Printer: {text}
+      {model?.source === 'chosen' && printer.status !== 'connecting' && (
+        <span className="badge chosen">
+          {connected ? 'chosen' : 'chosen, not connected'}
+        </span>
+      )}
       {connected && printer.transport === 'emulator' && (
         <span className="badge">Emulated</span>
       )}
@@ -61,14 +73,25 @@ export default function App() {
   const [printOpen, setPrintOpen] = useState(false)
   const [printerOpen, setPrinterOpen] = useState(false)
   const autosave = useAutosave(store)
-  const printerDpi = usePrinter().model?.dpi
+  const model = useKnownModel()
+  const roll = usePrinter().roll
 
-  // R3.AC2: use the connected printer's resolution.
+  // R3.AC2, R17.AC1–AC2: use the known printer's resolution.
   useEffect(() => {
-    if (printerDpi && printerDpi !== store.doc.label.dpi) {
-      store.setLabel({ dpi: printerDpi })
+    if (model && model.dpi !== store.doc.label.dpi) {
+      store.setLabel({ dpi: model.dpi })
     }
-  }, [printerDpi, store])
+  }, [model, store])
+
+  // R18.AC3: an empty label takes the loaded roll's size automatically.
+  const appliedRoll = useRef<LoadedRoll>(undefined)
+  useEffect(() => {
+    if (!roll?.size || appliedRoll.current === roll) return
+    appliedRoll.current = roll
+    if (store.doc.objects.length > 0) return
+    const target = labelForRoll(roll.size, model)
+    if (!sameSize(target, store.doc.label)) store.setLabel(target)
+  }, [roll, model, store])
 
   return (
     <EditorContext value={store}>

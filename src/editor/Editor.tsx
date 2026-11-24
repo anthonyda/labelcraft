@@ -4,6 +4,7 @@
  * tools live in a bottom bar whose panels open as bottom sheets (R15).
  */
 import { useEffect, useState, type ReactNode } from 'react'
+import { objectsOutside } from '../model/ops'
 import { pxToMm } from '../model/units'
 import type { AutosaveStatus } from '../storage/useAutosave'
 import { Sheet } from '../ui/Sheet'
@@ -48,6 +49,7 @@ function StatusLine() {
   const doc = history.present
   const selected = doc.objects.filter((o) => selection.includes(o.id))
   const one = selected.length === 1 ? selected[0] : undefined
+  const outside = objectsOutside(doc).length
   return (
     <div className="status-line">
       <span id="editor-title" className="label-size">
@@ -55,6 +57,9 @@ function StatusLine() {
         {fmt(pxToMm(1, doc.label.dpi) * 1000)} µm per dot
       </span>
       <p className="status" data-testid="editor-status" aria-live="polite">
+        {outside > 0 && (
+          <strong className="outside">{outside} outside the label · </strong>
+        )}
         {doc.objects.length} objects · {selection.length} selected
         {one && (
           <>

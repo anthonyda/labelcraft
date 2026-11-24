@@ -6,6 +6,7 @@ import {
   boundingBox,
   deleteObjects,
   duplicateObjects,
+  objectsOutside,
   reorderObjects,
   setLabelSetup,
   updateObject,
@@ -151,5 +152,42 @@ describe('model operations (T1.3)', () => {
     const after = setLabelSetup(before, { widthMm: 20, heightMm: 10 })
     expect(after.label).toMatchObject({ widthMm: 20, heightMm: 10, dpi: 203 })
     expect(after.objects).toEqual(before.objects)
+  })
+})
+
+// T6b.5 / R19
+describe('objectsOutside', () => {
+  const doc = (o: Partial<LabelObject>) => {
+    const d = newDoc({ widthMm: 30, heightMm: 12 })
+    d.objects.push({
+      ...createObject('rect', d.label),
+      x: 1,
+      y: 1,
+      width: 10,
+      height: 5,
+      rotation: 0,
+      ...o,
+    } as LabelObject)
+    return d
+  }
+  const halfDot = 25.4 / 203 / 2
+
+  it('is empty when everything is inside', () => {
+    expect(objectsOutside(doc({}))).toEqual([])
+    expect(objectsOutside(doc({ x: 0, y: 0, width: 30, height: 12 }))).toEqual(
+      [],
+    )
+  })
+
+  it('ignores less than half a dot past the edge', () => {
+    expect(objectsOutside(doc({ x: 20 + halfDot * 0.9 }))).toEqual([])
+    expect(objectsOutside(doc({ x: 20 + halfDot * 1.1 }))).toHaveLength(1)
+    expect(objectsOutside(doc({ y: -halfDot * 1.1 }))).toHaveLength(1)
+  })
+
+  it('uses the rotated box', () => {
+    // 10 × 5 at the bottom edge fits flat, but not turned 90°.
+    expect(objectsOutside(doc({ y: 7 }))).toEqual([])
+    expect(objectsOutside(doc({ y: 7, rotation: 90 }))).toHaveLength(1)
   })
 })

@@ -14,6 +14,11 @@ export type LabelSetup = {
   heightMm: number
   /** Printer resolution in dots per inch. */
   dpi: number
+  /**
+   * Official size entry the label was set from (R12.AC5), or "custom".
+   * Missing in labels saved before sizes existed.
+   */
+  size?: string
 }
 
 type ObjectBase = {
