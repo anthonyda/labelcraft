@@ -706,3 +706,46 @@ fieldset,
   width: 16px;
   height: 16px;
 }
+
+/* Hover feedback on every button (R20.AC6). Only on devices that hover, so
+   taps don't leave a button looking highlighted. */
+button {
+  cursor: pointer;
+  transition:
+    background-color 0.12s,
+    border-color 0.12s,
+    color 0.12s;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+@media (hover: hover) {
+  button:not(:disabled):hover {
+    background-color: color-mix(in srgb, currentColor 8%, transparent);
+    border-color: color-mix(in srgb, currentColor 35%, transparent);
+  }
+
+  button.primary:not(:disabled):hover {
+    background-color: color-mix(in srgb, var(--accent) 85%, #000);
+    border-color: color-mix(in srgb, var(--accent) 85%, #000);
+  }
+
+  button.danger:not(:disabled):hover {
+    background-color: color-mix(in srgb, var(--error) 10%, transparent);
+    border-color: var(--error);
+  }
+
+  .bottom-bar button:not(:disabled):hover {
+    border-color: transparent;
+  }
+}
+
+button:not(:disabled):active {
+  background-color: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+button.primary:not(:disabled):active {
+  background-color: color-mix(in srgb, var(--accent) 75%, #000);
+}

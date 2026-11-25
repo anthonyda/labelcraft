@@ -256,3 +256,18 @@ test('every button has an icon before its text; logo in the header', async ({
   await expect(page.getByRole('dialog', { name: 'Print' })).toBeVisible()
   expect(await buttonsWithoutIcon(page)).toEqual([])
 })
+
+// R20.AC6: every enabled button reacts to the mouse.
+test('desktop: buttons change on hover', async ({ page }) => {
+  test.skip(isPhone(page), 'hover needs a mouse')
+  const bg = (name: string | RegExp) =>
+    page
+      .getByRole('button', { name })
+      .evaluate((b) => getComputedStyle(b).backgroundColor)
+  for (const name of ['New', 'Text', 'Fit', /^Printer:/, 'Print…']) {
+    const before = await bg(name)
+    await page.getByRole('button', { name }).hover()
+    await expect.poll(() => bg(name), String(name)).not.toBe(before)
+    await page.mouse.move(0, 0)
+  }
+})
