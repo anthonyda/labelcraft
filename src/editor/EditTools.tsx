@@ -3,7 +3,7 @@ import { useScreenScale } from '../ui/calibration'
 import { CalibrateDialog } from '../ui/CalibrateDialog'
 import { Button, Icon, type IconName } from '../ui/icons'
 import { useEditorState, useEditorStore } from './useEditor'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   ZOOM_EPS as EPS,
   ZOOM_MAX,
@@ -17,10 +17,13 @@ import {
 export function EditTools({
   zoom,
   setZoom,
+  afterFirstRow,
 }: {
   /** Zoom in effect (real-size factor). */
   zoom: number
   setZoom: (z: Zoom) => void
+  /** Shown between the first row (history, selection, zoom) and Arrange. */
+  afterFirstRow?: ReactNode
 }) {
   const store = useEditorStore()
   useEditorState() // re-render on changes
@@ -105,6 +108,7 @@ export function EditTools({
           />
         </div>
       </div>
+      {afterFirstRow}
       <div className="group" role="group" aria-label="Arrange">
         {button('To front', 'toFront', () => store.reorderSelection('front'))}
         {button('Forward', 'forward', () => store.reorderSelection('forward'))}

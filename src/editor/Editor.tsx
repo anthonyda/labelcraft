@@ -153,8 +153,12 @@ export function Editor({
       {!phone && (
         <div className="toolbar" role="toolbar" aria-label="Editor tools">
           <FileMenu />
-          <AddMenu />
-          <EditTools zoom={zoom} setZoom={setZoom} />
+          {/* Rows: Labels, history/selection/zoom, Add, Arrange, Align. */}
+          <EditTools
+            zoom={zoom}
+            setZoom={setZoom}
+            afterFirstRow={<AddMenu />}
+          />
         </div>
       )}
 
