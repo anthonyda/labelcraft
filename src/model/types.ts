@@ -19,6 +19,32 @@ export type LabelSetup = {
    * Missing in labels saved before sizes existed.
    */
   size?: string
+  /**
+   * The design is turned 90° from the printer's layout (R22): switching
+   * between landscape and portrait. Printing turns it back.
+   */
+  turned?: boolean
+  /** Frame around the label (R23); missing = none. */
+  frame?: LabelFrame
+}
+
+export type FrameDesign =
+  | 'none'
+  | 'line'
+  | 'thick'
+  | 'double'
+  | 'rounded'
+  | 'dashed'
+  | 'dotted'
+  | 'corners'
+  | 'ticket'
+
+export type LabelFrame = {
+  design: FrameDesign
+  /** Line thickness in mm. */
+  thicknessMm: number
+  /** Distance from the label edge in mm. */
+  insetMm: number
 }
 
 type ObjectBase = {

@@ -308,6 +308,13 @@ export const rollToLabel = (
 export const sizeToLabel = (size: LabelSize, head: HeadContext) =>
   rollToLabel(size.rollWidthMm, size.lengthMm, head)
 
+/** R22: a turned label shows the printer layout's width and height swapped. */
+export const oriented = (
+  dims: { widthMm: number; heightMm: number },
+  turned?: boolean,
+): { widthMm: number; heightMm: number } =>
+  turned ? { widthMm: dims.heightMm, heightMm: dims.widthMm } : dims
+
 const fmt = (n: number) => String(round2(n))
 
 /** Dropdown text, e.g. "15 × 50 mm, prints 12 mm" or "14 × 28 mm round". */
@@ -334,7 +341,7 @@ export const selectedSizeId = (
 ): string => {
   if (label.size === 'custom') return 'custom'
   const fits = (s: LabelSize) => {
-    const l = sizeToLabel(s, headFor(s.family, model))
+    const l = oriented(sizeToLabel(s, headFor(s.family, model)), label.turned)
     return same(l.widthMm, label.widthMm) && same(l.heightMm, label.heightMm)
   }
   const listed = groups.flatMap((g) => g.sizes)

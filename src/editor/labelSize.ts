@@ -4,6 +4,7 @@ import {
   familyOfModel,
   headFor,
   labelSizesFor,
+  oriented,
   rollToLabel,
   sizeForRoll,
   type ModelInfo,
@@ -15,13 +16,14 @@ import type { LoadedRoll } from '../printer/printerService'
 export const labelForRoll = (
   roll: NonNullable<LoadedRoll['size']>,
   model?: ModelInfo,
+  turned?: boolean,
 ): Pick<LabelSetup, 'widthMm' | 'heightMm' | 'size'> => {
   const groups = labelSizesFor(model?.model)
   const entry = sizeForRoll(roll.widthMm, roll.lengthMm, groups)
   const family = entry?.family ?? familyOfModel(model?.model) ?? 'D'
   const head = model ? headFor(family, model) : FAMILIES[family].head
   return {
-    ...rollToLabel(roll.widthMm, roll.lengthMm, head),
+    ...oriented(rollToLabel(roll.widthMm, roll.lengthMm, head), turned),
     size: entry?.id ?? 'custom',
   }
 }

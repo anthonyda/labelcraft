@@ -146,3 +146,39 @@ export const setLabelSetup = (
   doc: LabelDoc,
   label: Partial<LabelSetup>,
 ): LabelDoc => ({ ...doc, label: { ...doc.label, ...label } })
+
+/** Landscape (wider than tall, or square) or portrait (R22.AC1). */
+export const orientationOf = (label: {
+  widthMm: number
+  heightMm: number
+}): 'landscape' | 'portrait' =>
+  label.widthMm >= label.heightMm ? 'landscape' : 'portrait'
+
+const normalAngle = (deg: number) => ((deg % 360) + 360) % 360
+
+/**
+ * R22.AC2–AC3: turn the label and its whole design 90°: clockwise when it
+ * becomes turned, counter-clockwise back. Turning twice restores the design.
+ */
+export const turnLabel = (doc: LabelDoc): LabelDoc => {
+  const { widthMm: W, heightMm: H } = doc.label
+  const clockwise = !doc.label.turned
+  const objects = doc.objects.map((o) => {
+    const cx = o.x + o.width / 2
+    const cy = o.y + o.height / 2
+    // Clockwise: (x, y) → (H − y, x). Counter-clockwise: (x, y) → (y, W − x).
+    const nx = clockwise ? H - cy : cy
+    const ny = clockwise ? cx : W - cx
+    return {
+      ...o,
+      x: nx - o.width / 2,
+      y: ny - o.height / 2,
+      rotation: normalAngle(o.rotation + (clockwise ? 90 : -90)),
+    }
+  })
+  return {
+    ...doc,
+    label: { ...doc.label, widthMm: H, heightMm: W, turned: clockwise },
+    objects,
+  }
+}

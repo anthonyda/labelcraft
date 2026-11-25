@@ -28,6 +28,22 @@ describe('serialize', () => {
     expect(() => fromJson(bad)).toThrow(/not a labelcraft label/)
   })
 
+  // R22, R23.AC4: orientation and frame are kept; bad frames are rejected.
+  it('keeps orientation and frame', () => {
+    const doc = newDoc()
+    doc.label.turned = true
+    doc.label.frame = { design: 'double', thicknessMm: 0.3, insetMm: 0.5 }
+    expect(fromJson(toJson(doc)).label).toMatchObject({
+      turned: true,
+      frame: { design: 'double' },
+    })
+    const bad = JSON.stringify({
+      ...doc,
+      label: { ...doc.label, frame: { design: 'stars' } },
+    })
+    expect(() => fromJson(bad)).toThrow(/not a labelcraft label/)
+  })
+
   it('rejects invalid JSON', () => {
     expect(() => fromJson('not json')).toThrow(/not valid JSON/)
   })

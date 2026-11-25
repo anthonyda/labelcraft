@@ -10,6 +10,7 @@ import { EmulatedD110MClient, receivedPageToCanvas } from '../printer/emulator'
 import { PrintCancelledError } from '../printer/printerService'
 import { printerService, usePrinter } from '../printer/usePrinter'
 import { renderLabel, type RenderWarning } from '../render/renderLabel'
+import { printLayout, turnCanvas } from '../render/turn'
 import { Button } from './icons'
 
 const LABEL_TYPES: [LabelType, string][] = [
@@ -111,15 +112,17 @@ export function PrintDialog({
   const printheadOverflow =
     preview &&
     model &&
-    (model.printDirection === 'left' ? preview.height : preview.width) >
-      model.printheadPixels
+    ((model.printDirection === 'left') !== !!doc.label.turned
+      ? preview.height
+      : preview.width) > model.printheadPixels
 
   const print = async () => {
     if (!preview) return
     setOutput(undefined)
     setMessage(undefined)
     try {
-      await printerService.print(preview, {
+      // R22.AC4: a turned design is sent in the printer's layout.
+      await printerService.print(printLayout(preview, doc.label.turned), {
         quantity,
         density: densityValue,
         labelType,
@@ -130,7 +133,10 @@ export function PrintDialog({
       if (client instanceof EmulatedD110MClient && model) {
         const page = client.receivedPages[0]
         if (page) {
-          setOutput(receivedPageToCanvas(page, model.printDirection))
+          const received = receivedPageToCanvas(page, model.printDirection)
+          setOutput(
+            doc.label.turned ? turnCanvas(received, 'clockwise') : received,
+          )
         }
       }
     } catch (e) {

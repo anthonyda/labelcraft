@@ -20,6 +20,7 @@ import {
   duplicateObjects,
   reorderObjects,
   setLabelSetup,
+  turnLabel,
   updateObject,
   type AlignEdge,
   type ReorderDirection,
@@ -163,6 +164,11 @@ export class EditorStore {
       this.state.selection,
       mergeKey,
     )
+  }
+
+  /** R22: switch between landscape and portrait, turning the design. */
+  turnLabel(): void {
+    this.apply(turnLabel(this.doc))
   }
 
   /** Label size / dpi (R3); objects are kept unchanged (R3.AC4). */

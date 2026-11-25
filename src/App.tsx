@@ -91,7 +91,7 @@ export default function App() {
     if (!roll?.size || appliedRoll.current === roll) return
     appliedRoll.current = roll
     if (store.doc.objects.length > 0) return
-    const target = labelForRoll(roll.size, model)
+    const target = labelForRoll(roll.size, model, store.doc.label.turned)
     if (!sameSize(target, store.doc.label)) store.setLabel(target)
   }, [roll, model, store])
 

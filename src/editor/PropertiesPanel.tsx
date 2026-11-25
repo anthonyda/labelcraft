@@ -14,10 +14,12 @@ import {
   findSize,
   headFor,
   labelSizesFor,
+  oriented,
   selectedSizeId,
   sizeName,
   sizeToLabel,
 } from '../model/labelSizes'
+import { orientationOf } from '../model/ops'
 import { labelSizePx } from '../model/units'
 import { useKnownModel } from '../printer/usePrinter'
 import { Button } from '../ui/icons'
@@ -30,6 +32,7 @@ import {
 } from './fields'
 import { FONT_FAMILIES } from './fonts'
 import { IMAGE_ACCEPT, imageObjectFromFile } from './images'
+import { FramePicker } from './FramePicker'
 import { RollOffer } from './RollOffer'
 import { useEditorState, useEditorStore } from './useEditor'
 
@@ -63,8 +66,12 @@ function SizeField() {
           const size = findSize(e.target.value)
           // R12.AC2: Custom starts from the current size.
           if (!size) return store.setLabel({ size: 'custom' })
+          // R22.AC5: keep the current orientation.
           store.setLabel({
-            ...sizeToLabel(size, headFor(size.family, model)),
+            ...oriented(
+              sizeToLabel(size, headFor(size.family, model)),
+              label.turned,
+            ),
             size: size.id,
           })
         }}
@@ -89,8 +96,10 @@ function LabelSetupFields() {
   const doc = useEditorState().history.present
   const model = useKnownModel()
   const { width, height } = labelSizePx(doc.label)
-  // R3.AC3: the printhead spans the label height for "left" printers.
-  const across = model?.printDirection === 'left' ? height : width
+  // R3.AC3: the printhead spans the label height for "left" printers
+  // (the width when the design is turned, R22).
+  const alongHead = (model?.printDirection === 'left') !== !!doc.label.turned
+  const across = alongHead ? height : width
   const overflow = model && across > model.printheadPixels
   const custom =
     selectedSizeId(doc.label, labelSizesFor(model?.model), model) === 'custom'
@@ -127,6 +136,17 @@ function LabelSetupFields() {
         </p>
       )}
       <SelectField
+        label="Orientation"
+        value={orientationOf(doc.label)}
+        options={[
+          ['landscape', 'Landscape'],
+          ['portrait', 'Portrait'],
+        ]}
+        onChange={(v) => {
+          if (v !== orientationOf(doc.label)) store.turnLabel()
+        }}
+      />
+      <SelectField
         label={
           model
             ? `Resolution (from ${model.model}${model.source === 'chosen' ? ', chosen' : ''})`
@@ -140,6 +160,7 @@ function LabelSetupFields() {
         disabled={!!model}
         onChange={(v) => store.setLabel({ dpi: v })}
       />
+      <FramePicker />
       <RollOffer />
       {overflow && (
         <p className="warning" role="note">

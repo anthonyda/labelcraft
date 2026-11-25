@@ -13,7 +13,7 @@ export function RollOffer() {
   const model = useKnownModel()
   const size = printer.roll?.size
   if (!size || printer.status === 'disconnected') return null
-  const target = labelForRoll(size, model)
+  const target = labelForRoll(size, model, label.turned)
   if (sameSize(target, label)) return null
   const name = `${mm(size.widthMm)} × ${mm(size.lengthMm)} mm`
   return (

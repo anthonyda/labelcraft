@@ -6,8 +6,10 @@ import {
   boundingBox,
   deleteObjects,
   duplicateObjects,
+  orientationOf,
   reorderObjects,
   setLabelSetup,
+  turnLabel,
   updateObject,
 } from './ops'
 import type { LabelDoc, LabelObject } from './types'
@@ -151,5 +153,74 @@ describe('model operations (T1.3)', () => {
     const after = setLabelSetup(before, { widthMm: 20, heightMm: 10 })
     expect(after.label).toMatchObject({ widthMm: 20, heightMm: 10, dpi: 203 })
     expect(after.objects).toEqual(before.objects)
+  })
+})
+
+// T6e.1 / R22
+describe('turnLabel', () => {
+  const doc = () => {
+    const d = newDoc({ widthMm: 40, heightMm: 12 })
+    d.label.size = 'D-12x40'
+    d.objects.push(
+      {
+        ...createObject('rect', d.label),
+        id: 'a',
+        x: 2,
+        y: 1,
+        width: 10,
+        height: 4,
+        rotation: 0,
+      } as LabelObject,
+      {
+        ...createObject('text', d.label),
+        id: 'b',
+        x: 25,
+        y: 4,
+        width: 6,
+        height: 2,
+        rotation: 30,
+      } as LabelObject,
+    )
+    return d
+  }
+
+  it('swaps width and height, keeps the size entry, turns objects clockwise', () => {
+    const t = turnLabel(doc())
+    expect(t.label).toMatchObject({
+      widthMm: 12,
+      heightMm: 40,
+      turned: true,
+      size: 'D-12x40',
+    })
+    expect(orientationOf(t.label)).toBe('portrait')
+    const a = t.objects[0]
+    // centre (7, 3) → (H − 3, 7) = (9, 7)
+    expect(a.x + a.width / 2).toBeCloseTo(9)
+    expect(a.y + a.height / 2).toBeCloseTo(7)
+    expect(a.rotation).toBe(90)
+    expect(t.objects[1].rotation).toBe(120)
+  })
+
+  it('keeps objects inside the label when they were inside', () => {
+    const t = turnLabel(doc())
+    for (const o of t.objects) {
+      const b = boundingBox(o)
+      expect(b.left).toBeGreaterThanOrEqual(-1e-9)
+      expect(b.top).toBeGreaterThanOrEqual(-1e-9)
+      expect(b.right).toBeLessThanOrEqual(t.label.widthMm + 1e-9)
+      expect(b.bottom).toBeLessThanOrEqual(t.label.heightMm + 1e-9)
+    }
+  })
+
+  it('turning back restores the design exactly', () => {
+    const d = doc()
+    const back = turnLabel(turnLabel(d))
+    expect(back.label).toEqual({ ...d.label, turned: false })
+    back.objects.forEach((o, i) => {
+      const before = d.objects[i]
+      expect(o.x).toBeCloseTo(before.x, 9)
+      expect(o.y).toBeCloseTo(before.y, 9)
+      expect(o.rotation).toBe(before.rotation)
+    })
   })
 })

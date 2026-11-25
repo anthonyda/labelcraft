@@ -4,11 +4,12 @@
  * matches the print (C7). Coordinates inside the stage are printer pixels.
  */
 import type Konva from 'konva'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Image, Layer, Rect, Stage, Transformer } from 'react-konva'
 import { boundingBox } from '../model/ops'
 import type { LabelObject, TextObject } from '../model/types'
 import { labelSizePx, mmToPx, ptToPx, pxToMm } from '../model/units'
+import { renderFrame } from '../render/frame'
 import { inkOutsideBox } from '../render/inkBounds'
 import { objectPixelBox } from '../render/renderObject'
 import { COARSE_POINTER_QUERY, useMediaQuery } from '../ui/useMediaQuery'
@@ -176,6 +177,7 @@ export function EditorCanvas({
   const dpi = doc.label.dpi
   const label = labelSizePx(doc.label)
   const outside = useObjectsOutside(doc)
+  const frame = useMemo(() => renderFrame(doc.label), [doc.label])
 
   const wrapperRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<Konva.Stage>(null)
@@ -497,6 +499,16 @@ export function EditorCanvas({
               }}
             />
           ))}
+          {/* R23.AC3: the frame, as printed, on top of objects. */}
+          {frame && (
+            <Image
+              name="label-frame"
+              image={frame}
+              width={label.width}
+              height={label.height}
+              listening={false}
+            />
+          )}
           {/* R19.AC1: the label edge stays visible over objects. */}
           <Rect
             name="label-edge"

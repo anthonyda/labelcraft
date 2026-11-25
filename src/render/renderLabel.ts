@@ -8,6 +8,7 @@ import Konva from 'konva'
 import type { LabelDoc } from '../model/types'
 import { labelSizePx } from '../model/units'
 import { DEFAULT_THRESHOLD, thresholdPixels } from './bitmap'
+import { renderFrame } from './frame'
 import { objectInkOutside } from './inkBounds'
 import { objectPixelBox, renderObject } from './renderObject'
 
@@ -64,6 +65,10 @@ export const renderLabel = async (
         }),
       )
     })
+
+    // R23.AC3: the frame is drawn on top of objects.
+    const frame = renderFrame(doc.label)
+    if (frame) layer.add(new Konva.Image({ image: frame, width, height }))
 
     const canvas = layer.toCanvas({ pixelRatio: 1, x: 0, y: 0, width, height })
     const ctx = canvas.getContext('2d')!
