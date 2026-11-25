@@ -291,7 +291,17 @@ test('desktop: Delete hover is red', async ({ page }) => {
   await del.hover()
   await expect
     .poll(() => del.evaluate((b) => getComputedStyle(b).color))
-    .toBe('rgb(185, 28, 28)')
+    .toBe(
+      await page.evaluate(() => {
+        // The theme's error red (R25), resolved by the browser.
+        const probe = document.createElement('span')
+        probe.style.color = 'var(--error)'
+        document.body.append(probe)
+        const c = getComputedStyle(probe).color
+        probe.remove()
+        return c
+      }),
+    )
 })
 
 // Toolbar rows line up: the first button of every row starts at the same x.
@@ -316,4 +326,26 @@ test('favicon matches the header logo', async ({ page, request }) => {
   const href = await page.locator('link[rel="icon"]').getAttribute('href')
   const svg = await (await request.get(new URL(href!, page.url()).href)).text()
   for (const d of logo) expect(svg).toContain(`d="${d}"`)
+})
+
+// R25.AC2: Theme switch: Auto → Light → Dark, remembered.
+test('theme switch cycles and is remembered', async ({ page }) => {
+  const button = page.getByRole('button', { name: /^Theme:/ })
+  const theme = () =>
+    page.evaluate(() => document.documentElement.dataset.theme ?? 'auto')
+  const bg = () =>
+    page.evaluate(() => getComputedStyle(document.body).backgroundColor)
+  await expect(button).toHaveAccessibleName('Theme: Auto (device)')
+  await button.click()
+  await expect(button).toHaveAccessibleName('Theme: Light')
+  expect(await theme()).toBe('light')
+  const light = await bg()
+  await button.click()
+  await expect(button).toHaveAccessibleName('Theme: Dark')
+  expect(await theme()).toBe('dark')
+  expect(await bg()).not.toBe(light)
+  await page.reload()
+  expect(await theme()).toBe('dark')
+  await page.getByRole('button', { name: /^Theme:/ }).click()
+  expect(await theme()).toBe('auto')
 })

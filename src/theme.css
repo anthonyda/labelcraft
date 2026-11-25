@@ -1,0 +1,455 @@
+/*
+ * Electric colour theme (spec R25): vivid blue header, orange for actions
+ * and selection, calm blue-grey panels. Light by default; dark follows the
+ * device, or is forced with html[data-theme].
+ */
+:root {
+  color-scheme: light;
+  --bg: #f2f8ff;
+  --ink: #071a3a;
+  --muted: #4a5d80;
+  --border: #dce7f7;
+  --header: #0057ff;
+  --header-ink: #ffffff;
+  --header-muted: #cfe0ff;
+  --header-border: rgb(255 255 255 / 0.35);
+  --header-btn: rgb(255 255 255 / 0.12);
+  --header-btn-hover: rgb(255 255 255 / 0.22);
+  --toolbar: #ffffff;
+  --seg: #ffffff;
+  --seg-border: #cfe0fa;
+  --seg-hover: #ffe9de;
+  --panel: #ffffff;
+  --canvas: #e4f0ff;
+  --dots: #c3dafa;
+  /* #d63a00 on white text is 4.7:1 (R25.AC3). */
+  --accent: #d63a00;
+  --accent-hover: #b83200;
+  --accent-ink: #ffffff;
+  --selection: #ffe4d6;
+  --selection-ink: #7a2100;
+  --chip: #eaf2ff;
+  --input: #ffffff;
+  --input-border: #cad8ee;
+  --ok: #00a86b;
+  --error: #d1123f;
+  --warn: #9a5b00;
+  --warn-bg: #fff4d6;
+  --warn-ink: #6b4400;
+  --info-bg: #e6f0ff;
+  --badge-bg: #ffe4d6;
+  --badge-ink: #7a2100;
+  --focus: #0057ff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #050d1f;
+    --ink: #e6f0ff;
+    --muted: #9db0d0;
+    --border: #1c2c4d;
+    --header: #0040c0;
+    --header-ink: #f2f7ff;
+    --header-muted: #bbd1ff;
+    --header-border: rgb(255 255 255 / 0.28);
+    --header-btn: rgb(255 255 255 / 0.1);
+    --header-btn-hover: rgb(255 255 255 / 0.2);
+    --toolbar: #081633;
+    --seg: #0e1d40;
+    --seg-border: #243b70;
+    --seg-hover: #3a1a0b;
+    --panel: #081633;
+    --canvas: #030915;
+    --dots: #15264a;
+    --accent: #ff7a45;
+    --accent-hover: #ff9466;
+    --accent-ink: #2a0d00;
+    --selection: #3a1a0b;
+    --selection-ink: #ffc7a8;
+    --chip: #12213f;
+    --input: #0e1d40;
+    --input-border: #2b4580;
+    --ok: #34d399;
+    --error: #fb7185;
+    --warn: #fcd34d;
+    --warn-bg: #2d2108;
+    --warn-ink: #fcd34d;
+    --info-bg: #0e2552;
+    --badge-bg: #3a1a0b;
+    --badge-ink: #ffc7a8;
+    --focus: #7aa7ff;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #050d1f;
+  --ink: #e6f0ff;
+  --muted: #9db0d0;
+  --border: #1c2c4d;
+  --header: #0040c0;
+  --header-ink: #f2f7ff;
+  --header-muted: #bbd1ff;
+  --header-border: rgb(255 255 255 / 0.28);
+  --header-btn: rgb(255 255 255 / 0.1);
+  --header-btn-hover: rgb(255 255 255 / 0.2);
+  --toolbar: #081633;
+  --seg: #0e1d40;
+  --seg-border: #243b70;
+  --seg-hover: #3a1a0b;
+  --panel: #081633;
+  --canvas: #030915;
+  --dots: #15264a;
+  --accent: #ff7a45;
+  --accent-hover: #ff9466;
+  --accent-ink: #2a0d00;
+  --selection: #3a1a0b;
+  --selection-ink: #ffc7a8;
+  --chip: #12213f;
+  --input: #0e1d40;
+  --input-border: #2b4580;
+  --ok: #34d399;
+  --error: #fb7185;
+  --warn: #fcd34d;
+  --warn-bg: #2d2108;
+  --warn-ink: #fcd34d;
+  --info-bg: #0e2552;
+  --badge-bg: #3a1a0b;
+  --badge-ink: #ffc7a8;
+  --focus: #7aa7ff;
+}
+
+/* ---- Base ---- */
+:root {
+  font-family: Inter, system-ui, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+a {
+  color: var(--focus);
+}
+
+input,
+select,
+textarea {
+  background: var(--input);
+  color: var(--ink);
+  border: 1px solid var(--input-border);
+  border-radius: 0.5rem;
+}
+
+input[type='range'],
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--accent);
+}
+
+button {
+  border-color: var(--seg-border);
+  background: var(--seg);
+  border-radius: 0.5rem;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+@media (hover: hover) {
+  button:not(:disabled):hover {
+    background-color: var(--seg-hover);
+    border-color: var(--seg-border);
+  }
+
+  button.primary:not(:disabled):hover {
+    background-color: var(--accent-hover);
+    border-color: var(--accent-hover);
+  }
+}
+
+button:not(:disabled):active {
+  background-color: var(--selection);
+}
+
+button.primary:not(:disabled):active {
+  background-color: var(--accent-hover);
+}
+
+.badge {
+  background: var(--badge-bg);
+  color: var(--badge-ink);
+}
+
+.warning {
+  color: var(--warn);
+}
+
+.error {
+  color: var(--error);
+}
+
+/* ---- Header ---- */
+.app-header {
+  background: var(--header);
+  color: var(--header-ink);
+  border-bottom: 0;
+}
+
+.brand .logo {
+  box-sizing: border-box;
+  width: 32px;
+  height: 32px;
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.app-header .autosave {
+  color: var(--header-muted);
+  opacity: 1;
+}
+
+.app-header .unsaved {
+  color: var(--header-ink);
+  font-weight: 600;
+}
+
+.app-header button {
+  background: var(--header-btn);
+  border-color: var(--header-border);
+  color: var(--header-ink);
+}
+
+.app-header .label-name-button {
+  background: transparent;
+  border-color: transparent;
+}
+
+@media (hover: hover) {
+  .app-header button:not(:disabled):hover {
+    background-color: var(--header-btn-hover);
+    border-color: var(--header-border);
+  }
+}
+
+.app-header button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+@media (hover: hover) {
+  .app-header button.primary:not(:disabled):hover {
+    background-color: var(--accent-hover);
+    border-color: var(--accent-hover);
+  }
+}
+
+.app-header .badge {
+  background: var(--header-ink);
+  color: var(--header);
+}
+
+.app-header .label-rename {
+  background: var(--input);
+  color: var(--ink);
+}
+
+/* ---- Toolbar ---- */
+.app .toolbar {
+  background: var(--toolbar);
+  border-bottom: 1px solid var(--border);
+}
+
+.row-label {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.toolbar .zoom-field {
+  border-color: var(--seg-border);
+  border-radius: 0;
+}
+
+/* ---- Panels ---- */
+.desktop .layers,
+.desktop .properties {
+  background: var(--panel);
+  border-color: var(--border);
+}
+
+.layers h2,
+.layers-end {
+  color: var(--muted);
+}
+
+.layers h2 {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.layers-end {
+  opacity: 1;
+}
+
+.layer:hover {
+  background: var(--chip);
+}
+
+.layer.selected {
+  background: var(--selection);
+  color: var(--selection-ink);
+  font-weight: 600;
+}
+
+.layers-list:focus-visible .layer.active,
+.layer.drop-before {
+  box-shadow: inset 0 3px 0 var(--accent);
+}
+
+.layers-list:focus-visible .layer.active {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.layer.drop-after {
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+
+.properties .field-group {
+  border-color: var(--border);
+  background: var(--panel);
+}
+
+.properties legend {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.frame-designs button.active {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  background: var(--selection);
+  color: var(--selection-ink);
+}
+
+.field-hint,
+.unit {
+  color: var(--muted);
+}
+
+/* ---- Canvas ---- */
+.editor-canvas {
+  background-color: var(--canvas);
+  background-image: radial-gradient(var(--dots) 1px, transparent 1px);
+  background-size: 16px 16px;
+  border-radius: 0;
+}
+
+.status-line {
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.status-line .outside {
+  color: var(--error);
+}
+
+.notice {
+  color: var(--muted);
+}
+
+.app > .notice {
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+}
+
+/* ---- Banners and offers ---- */
+.banner-warning {
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+}
+
+.banner-info {
+  background: var(--info-bg);
+  color: var(--ink);
+}
+
+.roll-offer {
+  border-inline-start-color: var(--accent);
+  background: var(--selection);
+  color: var(--selection-ink);
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+/* ---- Dialogs and sheets ---- */
+dialog {
+  background: var(--panel);
+  color: var(--ink);
+  border-color: var(--border);
+}
+
+.modal,
+.print-dialog {
+  border-radius: 0.75rem;
+  box-shadow: 0 24px 64px rgb(0 20 60 / 0.3);
+}
+
+.sheet {
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.bottom-bar {
+  background: var(--panel);
+  border-top-color: var(--border);
+}
+
+.bottom-bar button {
+  background: transparent;
+  color: var(--muted);
+}
+
+.bottom-bar button.active {
+  color: var(--accent);
+  box-shadow: inset 0 3px 0 var(--accent);
+}
+
+.bitmap {
+  background: #fff;
+}
+
+/* Calibrate dialog outline */
+.calibrate-label {
+  border-color: var(--accent);
+  background: var(--selection);
+  color: var(--selection-ink);
+}
+
+/* Theme switch in the header (R25.AC2) */
+.theme-button {
+  min-width: 44px;
+  padding: 0 0.6rem;
+}
+
+.sheet-header {
+  background: var(--panel);
+  color: var(--ink);
+}

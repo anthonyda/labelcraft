@@ -9,7 +9,8 @@ import type { LoadedRoll } from './printer/printerService'
 import { useKnownModel, usePrinter } from './printer/usePrinter'
 import { useAutosave } from './storage/useAutosave'
 import { ConnectPanel } from './ui/ConnectPanel'
-import { Button, Icon } from './ui/icons'
+import { Button, Icon, type IconName } from './ui/icons'
+import { NEXT_THEME, setTheme, useTheme, type ThemeChoice } from './ui/theme'
 import { Modal } from './ui/Modal'
 import { PrintDialog } from './ui/PrintDialog'
 
@@ -37,6 +38,29 @@ const sampleLabel = (): LabelDoc => {
     } as LabelObject,
   )
   return doc
+}
+
+const THEME_UI: Record<ThemeChoice, { icon: IconName; name: string }> = {
+  auto: { icon: 'themeAuto', name: 'Auto (device)' },
+  light: { icon: 'sun', name: 'Light' },
+  dark: { icon: 'moon', name: 'Dark' },
+}
+
+/** R25.AC2: Auto → Light → Dark. */
+function ThemeButton() {
+  const theme = useTheme()
+  const ui = THEME_UI[theme]
+  return (
+    <button
+      type="button"
+      className="theme-button"
+      aria-label={`Theme: ${ui.name}`}
+      title={`Theme: ${ui.name} (click to change)`}
+      onClick={() => setTheme(NEXT_THEME[theme])}
+    >
+      <Icon name={ui.icon} />
+    </button>
+  )
 }
 
 /** R17.AC6: names the model and says if it is detected, chosen or emulated. */
@@ -101,6 +125,7 @@ export default function App() {
         autosave={autosave}
         headerActions={
           <>
+            <ThemeButton />
             <PrinterButton onClick={() => setPrinterOpen(true)} />
             <Button
               icon="printer"
