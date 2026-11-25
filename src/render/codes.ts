@@ -152,3 +152,17 @@ export const drawBarcode = (
   }
   return { canvas, warning }
 }
+
+/**
+ * Narrowest printable width of a barcode in mm: one printer dot per module.
+ * Undefined when the content isn't valid for the format.
+ */
+export const minBarcodeWidthMm = (
+  content: string,
+  format: BarcodeFormat,
+  dpi: number,
+): number | undefined => {
+  const enc = barcodeEncoding(content, format)
+  if (!enc.valid) return undefined
+  return Math.ceil(((enc.bits.length * 25.4) / dpi) * 100) / 100
+}

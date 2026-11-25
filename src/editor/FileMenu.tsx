@@ -272,7 +272,11 @@ export function FileMenu() {
                   </>
                 ) : (
                   <>
-                    <Button icon="trash" onClick={() => setConfirmDelete(l.id)}>
+                    <Button
+                      icon="trash"
+                      className="destructive"
+                      onClick={() => setConfirmDelete(l.id)}
+                    >
                       Delete
                     </Button>
                     <Button

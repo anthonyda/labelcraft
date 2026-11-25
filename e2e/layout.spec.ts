@@ -271,3 +271,24 @@ test('desktop: buttons change on hover', async ({ page }) => {
     await page.mouse.move(0, 0)
   }
 })
+
+// The footer names the commit the site was built from (cache check).
+test('footer shows the build commit', async ({ page }) => {
+  const link = page.getByTestId('build-commit')
+  await expect(link).toHaveText(/^Build [0-9a-f]{7}$/)
+  await expect(link).toHaveAttribute(
+    'href',
+    /^https:\/\/github\.com\/anthonyda\/labelcraft\/commit\/[0-9a-f]{40}$/,
+  )
+})
+
+// R20.AC6: Delete turns red under the mouse.
+test('desktop: Delete hover is red', async ({ page }) => {
+  test.skip(isPhone(page), 'hover needs a mouse')
+  await page.getByRole('option', { name: 'Hello from labelcraft' }).click()
+  const del = page.getByRole('button', { name: 'Delete', exact: true })
+  await del.hover()
+  await expect
+    .poll(() => del.evaluate((b) => getComputedStyle(b).color))
+    .toBe('rgb(185, 28, 28)')
+})

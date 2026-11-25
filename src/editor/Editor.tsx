@@ -224,7 +224,14 @@ export function Editor({
       )}
 
       <p className="notice">
-        Independent project, not affiliated with or endorsed by NIIMBOT.
+        Independent project, not affiliated with or endorsed by NIIMBOT. ·{' '}
+        <a
+          className="build"
+          href={`https://github.com/anthonyda/labelcraft/commit/${__BUILD_COMMIT__}`}
+          data-testid="build-commit"
+        >
+          Build {__BUILD_COMMIT__.slice(0, 7)}
+        </a>
       </p>
     </div>
   )

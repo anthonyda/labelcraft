@@ -31,6 +31,7 @@ import type {
   ObjectType,
 } from '../model/types'
 import { pxToMm } from '../model/units'
+import { minBarcodeWidthMm } from '../render/codes'
 
 export type EditorState = {
   history: History
@@ -54,6 +55,22 @@ export type ObjectPatch = { id: string; patch: Partial<LabelObject> }
 
 /** Offset for duplicate and paste, in mm. */
 export const COPY_OFFSET_MM = 2
+
+/**
+ * A barcode narrower than one printer dot per bar can't be drawn and showed
+ * up blank. Widen it to its narrowest printable width, keeping its centre.
+ */
+const keepBarcodesPrintable = (doc: LabelDoc): LabelDoc => {
+  let changed = false
+  const objects = doc.objects.map((o) => {
+    if (o.type !== 'barcode') return o
+    const min = minBarcodeWidthMm(o.content, o.format, doc.label.dpi)
+    if (min === undefined || o.width >= min) return o
+    changed = true
+    return { ...o, x: o.x - (min - o.width) / 2, width: min }
+  })
+  return changed ? { ...doc, objects } : doc
+}
 
 export class EditorStore {
   private state: EditorState
@@ -114,6 +131,7 @@ export class EditorStore {
     selection = this.state.selection,
     mergeKey?: string,
   ): void {
+    doc = keepBarcodesPrintable(doc)
     const merge = mergeKey !== undefined && mergeKey === this.mergeKey
     this.mergeKey = mergeKey
     this.set({

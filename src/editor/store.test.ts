@@ -220,3 +220,41 @@ describe('editor store', () => {
     expect(s.doc.objects).toHaveLength(1)
   })
 })
+
+// Bug fix: a barcode resized narrower than one dot per bar was blank.
+describe('barcodes stay printable', () => {
+  const barcode = (): LabelObject =>
+    ({
+      ...createObject('barcode', newDoc().label),
+      id: 'b',
+      x: 10,
+      width: 35,
+      content: '012345678901',
+      format: 'CODE128',
+    }) as LabelObject
+
+  it('widens a too-narrow barcode to its printable width, keeping its centre', () => {
+    const s = store(barcode())
+    s.updateObjects([{ id: 'b', patch: { width: 5 } }])
+    const o = s.doc.objects[0]
+    // 101 modules at 203 dpi ≈ 12.64 mm
+    expect(o.width).toBeGreaterThanOrEqual(12.6)
+    expect(o.width).toBeLessThan(13)
+    expect(o.x + o.width / 2).toBeCloseTo(10 + 5 / 2, 5)
+    expect(Math.round((o.width * 203) / 25.4)).toBeGreaterThanOrEqual(101)
+  })
+
+  it('widens it when longer content needs more room', () => {
+    const s = store({ ...barcode(), width: 13 } as LabelObject)
+    s.updateObject('b', { content: '012345678901234567890123' })
+    expect(s.doc.objects[0].width).toBeGreaterThan(13)
+  })
+
+  it('leaves wide and invalid barcodes alone', () => {
+    const s = store(barcode())
+    s.updateObject('b', { width: 20 })
+    expect(s.doc.objects[0].width).toBe(20)
+    s.updateObject('b', { format: 'EAN13', content: 'AB', width: 3 })
+    expect(s.doc.objects[0].width).toBe(3)
+  })
+})

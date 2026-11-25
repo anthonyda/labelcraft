@@ -18,8 +18,15 @@ export function EditTools({
     icon: IconName,
     onClick: () => void,
     disabled = none,
+    className?: string,
   ) => (
-    <Button key={name} icon={icon} onClick={onClick} disabled={disabled}>
+    <Button
+      key={name}
+      icon={icon}
+      onClick={onClick}
+      disabled={disabled}
+      className={className}
+    >
       {name}
     </Button>
   )
@@ -34,7 +41,13 @@ export function EditTools({
         </div>
         <div className="group" role="group" aria-label="Selection">
           {button('Duplicate', 'duplicate', () => store.duplicateSelection())}
-          {button('Delete', 'trash', () => store.deleteSelection())}
+          {button(
+            'Delete',
+            'trash',
+            () => store.deleteSelection(),
+            none,
+            'destructive',
+          )}
         </div>
         <div className="group" role="group" aria-label="Zoom">
           <button
