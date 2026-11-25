@@ -18,6 +18,7 @@ import { imageObjectFromFile, isImageFile } from './images'
 import { PropertiesPanel } from './PropertiesPanel'
 import { commandForKey, isTypingTarget, type Command } from './shortcuts'
 import type { EditorStore } from './store'
+import type { Zoom } from './zoom'
 import { useEditorState, useEditorStore, useObjectsOutside } from './useEditor'
 
 const run = (store: EditorStore, c: Command) => {
@@ -93,7 +94,16 @@ export function Editor({
   headerActions: ReactNode
 }) {
   const store = useEditorStore()
-  const [zoom, setZoom] = useState(1)
+  // R4.AC1, AC8: real-size zoom; a new or opened label starts at Fit.
+  const [zoomSetting, setZoom] = useState<Zoom>('fit')
+  const [fitZoom, setFitZoom] = useState(1)
+  const zoom = zoomSetting === 'fit' ? fitZoom : zoomSetting
+  const { loads } = useEditorState()
+  const [seenLoads, setSeenLoads] = useState(loads)
+  if (loads !== seenLoads) {
+    setSeenLoads(loads)
+    setZoom('fit')
+  }
   const phone = useMediaQuery(PHONE_QUERY)
   const [panel, setPanel] = useState<Panel>()
 
@@ -155,7 +165,7 @@ export function Editor({
           </aside>
         )}
         <div className="editor-main">
-          <EditorCanvas zoom={zoom} setZoom={setZoom} />
+          <EditorCanvas zoom={zoom} setZoom={setZoom} onFitZoom={setFitZoom} />
           <StatusLine />
         </div>
         {!phone && <PropertiesPanel />}

@@ -5,6 +5,7 @@ import {
   openPanel,
   screen,
   status,
+  isPhone,
 } from './helpers.ts'
 
 /*
@@ -128,19 +129,57 @@ test('toolbar: align, duplicate, delete, disabled without selection', async ({
   await expect(status(page)).toContainText('3 objects')
 })
 
-// R4.AC1: zoom
-test('zooms in, out and back to fit', async ({ page }) => {
+// R4.AC1, AC8: real-size zoom from 10% to 2000%, typed values, Fit.
+test('zoom is real size, with steps, typed values and Fit', async ({
+  page,
+}) => {
   const canvas = page.getByTestId('editor-canvas')
+  const scale = async () => Number(await canvas.getAttribute('data-scale'))
+  const level = page.getByLabel('Zoom level')
   await openPanel(page, 'Edit')
-  const fit = Number(await canvas.getAttribute('data-scale'))
+
+  // Starts at Fit, which shows its own percentage.
+  const fitText = await level.inputValue()
+  expect(fitText).toMatch(/^\d+%$/)
+  const fit = await scale()
+
+  // 100% = real size: the 30 mm label is 113 CSS px wide.
+  await level.fill('100')
+  await level.press('Enter')
+  await expect(level).toHaveValue('100%')
+  expect(Math.round(240 * (await scale()))).toBe(113)
+
+  await level.fill('250%')
+  await level.press('Enter')
+  await expect(level).toHaveValue('250%')
+  expect(await scale()).toBeCloseTo((2.5 * 96) / 203, 5)
+
   await page.getByRole('button', { name: 'Zoom in' }).click()
-  await expect(page.getByLabel('Zoom level')).toHaveText('150%')
-  expect(Number(await canvas.getAttribute('data-scale'))).toBeCloseTo(fit * 1.5)
-  await page.getByRole('button', { name: 'Zoom out' }).click()
-  await page.getByRole('button', { name: 'Zoom out' }).click()
-  await expect(page.getByLabel('Zoom level')).toHaveText('75%')
+  await expect(level).toHaveValue('300%')
+
+  const out = page.getByRole('button', { name: 'Zoom out' })
+  while (await out.isEnabled()) await out.click()
+  await expect(level).toHaveValue('10%')
+
   await page.getByRole('button', { name: 'Fit' }).click()
-  await expect(page.getByLabel('Zoom level')).toHaveText('100%')
+  await expect(level).toHaveValue(fitText)
+  expect(await scale()).toBeCloseTo(fit, 5)
+})
+
+// R4.AC8: Ctrl + mouse wheel zooms smoothly.
+test('ctrl + wheel zooms', async ({ page }) => {
+  test.skip(isPhone(page), 'mouse wheel')
+  const canvas = page.getByTestId('editor-canvas')
+  const before = Number(await canvas.getAttribute('data-scale'))
+  const box = (await canvas.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.keyboard.down('Control')
+  await page.mouse.wheel(0, -200)
+  await page.keyboard.up('Control')
+  await expect
+    .poll(async () => Number(await canvas.getAttribute('data-scale')))
+    .toBeGreaterThan(before * 1.2)
+  await expect(page.getByLabel('Zoom level')).not.toHaveValue(/^\D/)
 })
 
 // C7: the edited label is what gets printed.

@@ -42,6 +42,8 @@ export type EditorState = {
   /** How many times the clipboard has been pasted (offsets each paste). */
   pasteCount: number
   file: FileInfo
+  /** Increases each time a document is loaded (new, open, import, restore). */
+  loads: number
 }
 
 /** Which named label is being edited, and the state it was last saved in. */
@@ -83,6 +85,7 @@ export class EditorStore {
     this.state = {
       history: createHistory(doc),
       selection: [],
+      loads: 0,
       clipboard: [],
       pasteCount: 0,
       file: { savedDoc: doc },
@@ -195,6 +198,7 @@ export class EditorStore {
       history: createHistory(doc),
       selection: [],
       file: { ...file, savedDoc: dirty ? undefined : doc },
+      loads: this.state.loads + 1,
     })
   }
 

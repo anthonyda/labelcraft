@@ -20,7 +20,7 @@ import {
   useObjectBitmap,
   useObjectsOutside,
 } from './useEditor'
-import { ZOOM_MAX, ZOOM_MIN } from './zoom'
+import { clampZoom, scaleToZoom, zoomToScale, type Zoom } from './zoom'
 
 /** Minimum screen px around the label. */
 export const CANVAS_PADDING = 16
@@ -167,9 +167,13 @@ function TextEditor({
 export function EditorCanvas({
   zoom,
   setZoom,
+  onFitZoom,
 }: {
+  /** Zoom in effect: real-size factor (R4.AC1). */
   zoom: number
-  setZoom: (z: number) => void
+  setZoom: (z: Zoom) => void
+  /** Reports the zoom that fits the label in the canvas. */
+  onFitZoom: (z: number) => void
 }) {
   const store = useEditorStore()
   const { history, selection } = useEditorState()
@@ -208,7 +212,11 @@ export function EditorCanvas({
     (container.width - 2 * CANVAS_PADDING) / label.width,
     (container.height - 2 * CANVAS_PADDING) / label.height,
   )
-  const scale = Math.max(0.05, fit * zoom)
+  const fitZoom = clampZoom(scaleToZoom(fit, dpi))
+  useEffect(() => {
+    if (Number.isFinite(fitZoom)) onFitZoom(fitZoom)
+  }, [fitZoom, onFitZoom])
+  const scale = zoomToScale(zoom, dpi)
   const stageW = Math.max(
     container.width,
     label.width * scale + 2 * CANVAS_PADDING,
@@ -281,10 +289,7 @@ export function EditorCanvas({
       const p = points(e)
       el.scrollLeft -= p.mid.x - g.mid.x
       el.scrollTop -= p.mid.y - g.mid.y
-      const next = Math.min(
-        ZOOM_MAX,
-        Math.max(ZOOM_MIN, (g.zoom * p.dist) / Math.max(1, g.dist)),
-      )
+      const next = clampZoom((g.zoom * p.dist) / Math.max(1, g.dist))
       if (Math.abs(next - zoomRef.current) > 0.01) {
         pendingAnchor.current = {
           ...p.mid,
@@ -307,11 +312,27 @@ export function EditorCanvas({
         objectNodes().forEach((n) => n.draggable(true))
       }
     }
+    // R4.AC8: Ctrl (or Cmd) + mouse wheel zooms smoothly at the pointer.
+    const onWheel = (e: WheelEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return
+      e.preventDefault()
+      const next = clampZoom(zoomRef.current * Math.exp(-e.deltaY * 0.0015))
+      if (Math.abs(next - zoomRef.current) < 0.0001) return
+      const r = el.getBoundingClientRect()
+      pendingAnchor.current = {
+        x: e.clientX - r.left,
+        y: e.clientY - r.top,
+        ratio: next / zoomRef.current,
+      }
+      setZoom(next)
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
     el.addEventListener('touchstart', onStart, { capture: true })
     el.addEventListener('touchmove', onMove, { capture: true, passive: false })
     el.addEventListener('touchend', onEnd, { capture: true, passive: false })
     el.addEventListener('touchcancel', onEnd, { capture: true })
     return () => {
+      el.removeEventListener('wheel', onWheel)
       el.removeEventListener('touchstart', onStart, { capture: true })
       el.removeEventListener('touchmove', onMove, { capture: true })
       el.removeEventListener('touchend', onEnd, { capture: true })

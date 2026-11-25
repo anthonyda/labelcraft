@@ -1,14 +1,24 @@
 /** Editing tool groups shared by the desktop toolbar and the phone Edit sheet (T3.4). */
 import { Button, Icon, type IconName } from '../ui/icons'
 import { useEditorState, useEditorStore } from './useEditor'
-import { ZOOM_EPS as EPS, ZOOM_MAX, ZOOM_MIN, zoomStep } from './zoom'
+import { useState } from 'react'
+import {
+  ZOOM_EPS as EPS,
+  ZOOM_MAX,
+  ZOOM_MIN,
+  formatZoom,
+  parseZoomPercent,
+  zoomStep,
+  type Zoom,
+} from './zoom'
 
 export function EditTools({
   zoom,
   setZoom,
 }: {
+  /** Zoom in effect (real-size factor). */
   zoom: number
-  setZoom: (z: number) => void
+  setZoom: (z: Zoom) => void
 }) {
   const store = useEditorStore()
   useEditorState() // re-render on changes
@@ -58,7 +68,7 @@ export function EditTools({
           >
             <Icon name="zoomOut" />
           </button>
-          <output aria-label="Zoom level">{Math.round(zoom * 100)}%</output>
+          <ZoomField zoom={zoom} setZoom={setZoom} />
           <button
             type="button"
             aria-label="Zoom in"
@@ -67,7 +77,7 @@ export function EditTools({
           >
             <Icon name="zoomIn" />
           </button>
-          <Button icon="fit" onClick={() => setZoom(1)}>
+          <Button icon="fit" onClick={() => setZoom('fit')}>
             Fit
           </Button>
         </div>
@@ -97,5 +107,37 @@ export function EditTools({
         )}
       </div>
     </>
+  )
+}
+
+/** R4.AC8: shows the zoom and takes any typed percentage (Enter or leave). */
+function ZoomField({
+  zoom,
+  setZoom,
+}: {
+  zoom: number
+  setZoom: (z: Zoom) => void
+}) {
+  const [draft, setDraft] = useState<string>()
+  const commit = () => {
+    if (draft === undefined) return
+    const z = parseZoomPercent(draft)
+    if (z !== undefined) setZoom(z)
+    setDraft(undefined)
+  }
+  return (
+    <input
+      className="zoom-field"
+      aria-label="Zoom level"
+      inputMode="decimal"
+      value={draft ?? formatZoom(zoom)}
+      onChange={(e) => setDraft(e.target.value)}
+      onFocus={(e) => e.target.select()}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') commit()
+        if (e.key === 'Escape') setDraft(undefined)
+      }}
+    />
   )
 }
