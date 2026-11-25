@@ -126,6 +126,16 @@ export const saveLabel = async (label: {
   return id
 }
 
+/** R10.AC5: rename a saved label, keeping its saved content. */
+export const renameLabel = async (id: string, name: string): Promise<void> => {
+  const db = await openDb()
+  const tx = db.transaction(LABELS, 'readwrite')
+  const store = tx.objectStore(LABELS)
+  const saved = await request<SavedLabel | undefined>(store.get(id))
+  if (saved) store.put({ ...saved, name })
+  await done(tx)
+}
+
 export const deleteLabel = async (id: string): Promise<void> => {
   const db = await openDb()
   const tx = db.transaction(LABELS, 'readwrite')

@@ -150,3 +150,48 @@ test('exports the label as a PNG at printer resolution', async ({ page }) => {
   expect(data.readUInt32BE(16)).toBe(240)
   expect(data.readUInt32BE(20)).toBe(96)
 })
+
+// R10.AC5: rename the current label from the header.
+test('renames the label from the header', async ({ page }) => {
+  const renameTo = async (name: string) => {
+    await page
+      .getByRole('button', { name: /Rename label|Untitled|Shelf/ })
+      .first()
+      .click()
+    const input = page.getByLabel('Label name')
+    await input.fill(name)
+    await input.press('Enter')
+  }
+
+  // Unsaved label: the name is kept for Save and auto-save.
+  await renameTo('Shelf B')
+  await expect(labelName(page)).toHaveText('Shelf B')
+  await waitSaved(page)
+  await page.reload()
+  await expect(labelName(page)).toHaveText('Shelf B')
+  await openPanel(page, 'Labels')
+  await labels(page).getByRole('button', { name: 'Save', exact: true }).click()
+  const saveDialog = page.getByRole('dialog', { name: 'Save label as' })
+  await expect(saveDialog.getByLabel('Name')).toHaveValue('Shelf B')
+  await saveDialog.getByRole('button', { name: 'Save' }).click()
+  await expect(saveDialog).toBeHidden()
+
+  // Saved label with unsaved changes: renamed in storage, changes stay unsaved.
+  await addRect(page)
+  await expect(page.getByText('unsaved changes')).toBeVisible()
+  await renameTo('Shelf C')
+  await expect(labelName(page)).toHaveText('Shelf C')
+  await expect(page.getByText('unsaved changes')).toBeVisible()
+  await openPanel(page, 'Labels')
+  await labels(page).getByRole('button', { name: 'Open…' }).click()
+  const open = page.getByRole('dialog', { name: 'Open label' })
+  await expect(open.getByText('Shelf C')).toBeVisible()
+  await expect(open.getByText('Shelf B')).toHaveCount(0)
+
+  // Escape cancels.
+  await open.getByRole('button', { name: 'Close' }).click()
+  await page.getByRole('button', { name: /Shelf C/ }).click()
+  await page.getByLabel('Label name').fill('Nope')
+  await page.getByLabel('Label name').press('Escape')
+  await expect(labelName(page)).toHaveText('Shelf C')
+})

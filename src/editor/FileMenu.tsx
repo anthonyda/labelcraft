@@ -12,6 +12,7 @@ import {
   listLabels,
   saveLabel,
   type SavedLabelMeta,
+  renameLabel,
 } from '../storage/db'
 import {
   downloadBlob,
@@ -20,7 +21,7 @@ import {
   labelThumbnail,
 } from '../storage/files'
 import type { AutosaveStatus } from '../storage/useAutosave'
-import { Button } from '../ui/icons'
+import { Button, Icon } from '../ui/icons'
 import { Modal } from '../ui/Modal'
 import { useEditorState, useEditorStore } from './useEditor'
 
@@ -42,9 +43,56 @@ const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e))
 export function FileStatus({ autosave }: { autosave: AutosaveStatus }) {
   const store = useEditorStore()
   const { file } = useEditorState()
+  const [renaming, setRenaming] = useState(false)
+  const [error, setError] = useState<string>()
+
+  // R10.AC5: rename in place; a saved label is renamed in storage too.
+  const rename = async (name?: string) => {
+    setRenaming(false)
+    const n = name?.trim()
+    if (!n || n === file.name) return
+    try {
+      if (file.labelId) await renameLabel(file.labelId, n)
+      store.renameFile(n)
+      setError(undefined)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    }
+  }
+
   return (
     <p className="file-name">
-      <strong data-testid="label-name">{file.name ?? 'Untitled'}</strong>
+      {renaming ? (
+        <input
+          className="label-rename"
+          aria-label="Label name"
+          defaultValue={file.name ?? ''}
+          placeholder="Untitled"
+          maxLength={100}
+          autoFocus
+          onFocus={(e) => e.target.select()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') void rename(e.currentTarget.value)
+            if (e.key === 'Escape') setRenaming(false)
+          }}
+          onBlur={(e) => void rename(e.currentTarget.value)}
+        />
+      ) : (
+        <button
+          type="button"
+          className="label-name-button"
+          title="Rename label"
+          onClick={() => setRenaming(true)}
+        >
+          <Icon name="edit" />
+          <strong data-testid="label-name">{file.name ?? 'Untitled'}</strong>
+        </button>
+      )}
+      {error && (
+        <span className="error" role="alert">
+          {error}
+        </span>
+      )}
       {store.isDirty && file.labelId && (
         <span className="unsaved">unsaved changes</span>
       )}

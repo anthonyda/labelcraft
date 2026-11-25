@@ -229,6 +229,11 @@ export class EditorStore {
     this.set({ file: { labelId, name, savedDoc: this.doc } })
   }
 
+  /** R10.AC5: the label's name changed (saved state unchanged). */
+  renameFile(name: string): void {
+    this.set({ file: { ...this.state.file, name } })
+  }
+
   /** The named label was deleted: keep editing, but it is no longer saved. */
   forgetLabel(labelId: string): void {
     if (this.state.file.labelId !== labelId) return
