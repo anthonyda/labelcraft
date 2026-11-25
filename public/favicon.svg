@@ -7,6 +7,6 @@
       .f { fill: #f3f4f6; }
     }
   </style>
-  <path class="s" stroke-width="2.2" d="M4 5h16v9l-5 5H4z M20 14c-3 0-5 2-5 5"/>
-  <path class="f" fill-opacity="0.3" d="M15 19c0-2.5 2-5 5-5z"/>
+  <path class="s" stroke-width="1.8" d="M4 5h16v9l-5 5H4z M20 14c-3 0-5 2-5 5 M8 9h8 M8 12h5"/>
+  <path class="f" fill-opacity="0.25" d="M15 19c0-2.5 2-5 5-5z"/>
 </svg>

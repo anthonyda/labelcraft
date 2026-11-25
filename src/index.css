@@ -925,3 +925,10 @@ button.icon-only {
 .toolbar .group-row > .row-label {
   margin-inline-end: -0.75rem;
 }
+
+.layer-rename {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  padding: 0.25rem 0.375rem;
+}

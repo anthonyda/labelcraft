@@ -124,11 +124,13 @@ export function TextField({
   value,
   onChange,
   multiline,
+  placeholder,
 }: {
   label: string
   value: string
   onChange: (v: string) => void
   multiline?: boolean
+  placeholder?: string
 }) {
   const id = useId()
   return (
@@ -146,6 +148,7 @@ export function TextField({
           id={id}
           type="text"
           value={value}
+          placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
         />
       )}

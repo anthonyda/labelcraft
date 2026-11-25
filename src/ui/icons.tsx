@@ -4,7 +4,7 @@
  * theme. One icon per action, used the same way everywhere.
  */
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
-import { ICONS, type IconName } from './iconPaths'
+import { ICONS, LOGO_FOLD, LOGO_OUTLINE, type IconName } from './iconPaths'
 
 export type { IconName }
 
@@ -61,9 +61,9 @@ export function Logo({ size = 24 }: { size?: number }) {
       aria-hidden="true"
       focusable="false"
     >
-      <path d="M4 5h16v9l-5 5H4z M20 14c-3 0-5 2-5 5 M8 9h8 M8 12h5" />
+      <path d={LOGO_OUTLINE} />
       <path
-        d="M15 19c0-2.5 2-5 5-5z"
+        d={LOGO_FOLD}
         fill="currentColor"
         fillOpacity={0.25}
         stroke="none"

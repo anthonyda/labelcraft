@@ -159,3 +159,46 @@ test('Alt+arrows move the selected layer', async ({ page }) => {
     'Hello from labelcraft',
   ])
 })
+
+// R21.AC10: rename by double-click (desktop) or the Name field.
+test('rename a layer', async ({ page }) => {
+  test.skip(isPhone(page), 'double-click')
+  await row(page, 'Hello from labelcraft').dblclick()
+  const input = list(page).getByLabel('Layer name')
+  await expect(input).toBeFocused()
+  await input.fill('Title')
+  await input.press('Enter')
+  await expect(row(page, 'Title')).toBeVisible()
+  await row(page, 'Title').click()
+  await expect(
+    page.getByRole('complementary', { name: 'Properties' }).getByLabel('Name'),
+  ).toHaveValue('Title')
+
+  // Escape cancels; an empty name goes back to the automatic one.
+  await list(page).focus()
+  await page.keyboard.press('F2')
+  await list(page).getByLabel('Layer name').fill('Nope')
+  await list(page).getByLabel('Layer name').press('Escape')
+  await expect(row(page, 'Title')).toBeVisible()
+  await row(page, 'Title').dblclick()
+  await list(page).getByLabel('Layer name').fill('')
+  await list(page).getByLabel('Layer name').press('Enter')
+  await expect(row(page, 'Hello from labelcraft')).toBeVisible()
+
+  // One undo step per rename.
+  await page.getByRole('button', { name: 'Undo', exact: true }).click()
+  await expect(row(page, 'Title')).toBeVisible()
+})
+
+test('phone: rename from the Name field', async ({ page }) => {
+  test.skip(!isPhone(page), 'phone')
+  await openPanel(page, 'Layers')
+  await row(page, 'Hello from labelcraft').click()
+  await openPanel(page, 'Properties')
+  await page
+    .getByRole('complementary', { name: 'Properties' })
+    .getByLabel('Name')
+    .fill('Title')
+  await openPanel(page, 'Layers')
+  await expect(row(page, 'Title')).toBeVisible()
+})

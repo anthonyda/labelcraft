@@ -30,14 +30,26 @@ export const baseLayerName = (o: LabelObject): string => {
   return name ? clip(name) : TYPE_NAMES[o.type]
 }
 
-/** Names by object id; names used more than once get 1, 2, … in drawing order. */
+/** The user's name for an object, if it has one (R21.AC10). */
+export const customName = (o: LabelObject): string | undefined =>
+  o.name?.trim() ? clip(o.name.trim()) : undefined
+
+/**
+ * Names by object id. Names given by the user are shown as they are;
+ * automatic names used more than once get 1, 2, … in drawing order.
+ */
 export const layerNames = (doc: LabelDoc): Map<string, string> => {
-  const bases = doc.objects.map(baseLayerName)
+  const auto = doc.objects.filter((o) => !customName(o))
+  const bases = auto.map(baseLayerName)
   const total = new Map<string, number>()
   bases.forEach((b) => total.set(b, (total.get(b) ?? 0) + 1))
   const seen = new Map<string, number>()
   const names = new Map<string, string>()
-  doc.objects.forEach((o, i) => {
+  doc.objects.forEach((o) => {
+    const custom = customName(o)
+    if (custom) names.set(o.id, custom)
+  })
+  auto.forEach((o, i) => {
     const b = bases[i]
     if (total.get(b)! > 1) {
       const n = (seen.get(b) ?? 0) + 1

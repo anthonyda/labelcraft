@@ -65,3 +65,8 @@ export const ICONS = {
 } as const
 
 export type IconName = keyof typeof ICONS
+
+/** The logo (R20.AC4): sticker outline with lines, and its peeled corner. */
+export const LOGO_OUTLINE =
+  'M4 5h16v9l-5 5H4z M20 14c-3 0-5 2-5 5 M8 9h8 M8 12h5'
+export const LOGO_FOLD = 'M15 19c0-2.5 2-5 5-5z'

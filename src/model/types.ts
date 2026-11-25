@@ -49,6 +49,8 @@ export type LabelFrame = {
 
 type ObjectBase = {
   id: string
+  /** Name given by the user in the layers panel (R21.AC10); else automatic. */
+  name?: string
   x: number
   y: number
   width: number

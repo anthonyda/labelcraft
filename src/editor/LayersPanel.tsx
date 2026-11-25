@@ -10,7 +10,7 @@ import {
   type KeyboardEvent,
   type PointerEvent,
 } from 'react'
-import { layerNames } from '../model/layerNames'
+import { baseLayerName, layerNames } from '../model/layerNames'
 import type { LabelObject } from '../model/types'
 import { Icon, type IconName } from '../ui/icons'
 import { useEditorState, useEditorStore, useObjectsOutside } from './useEditor'
@@ -42,6 +42,8 @@ export function LayersPanel({
   const listRef = useRef<HTMLDivElement>(null)
   const [activeId, setActiveId] = useState<string>()
   const active = rows.find((o) => o.id === activeId)?.id ?? selection[0]
+  /** R21.AC10: the layer whose name is being edited. */
+  const [renaming, setRenaming] = useState<string>()
   /** R21.AC9: row being dragged and the slot (0..rows) it would land in. */
   const [drag, setDrag] = useState<{ id: string; slot: number }>()
 
@@ -122,6 +124,9 @@ export function LayersPanel({
       }
     }
     switch (e.key) {
+      case 'F2':
+        if (active) setRenaming(active)
+        break
       case 'ArrowDown':
         move(i + 1)
         break
@@ -188,12 +193,30 @@ export function LayersPanel({
                 .filter(Boolean)
                 .join(' ')}
               onClick={(e) => {
+                if (renaming === o.id) return
+                // A double-click renames (desktop); don't close the panel.
+                if (e.detail > 1) return
                 pick(o.id, e.shiftKey || e.ctrlKey || e.metaKey)
                 if (!(e.shiftKey || e.ctrlKey || e.metaKey)) onPicked?.()
               }}
+              onDoubleClick={() => setRenaming(o.id)}
             >
               <Icon name={TYPE_ICONS[o.type]} />
-              <span className="layer-name">{names.get(o.id)}</span>
+              {renaming === o.id ? (
+                <RenameField
+                  initial={o.name ?? ''}
+                  placeholder={baseLayerName(o)}
+                  onDone={(name) => {
+                    setRenaming(undefined)
+                    if (name !== undefined && name !== (o.name ?? '')) {
+                      store.updateObject(o.id, { name: name || undefined })
+                    }
+                    listRef.current?.focus()
+                  }}
+                />
+              ) : (
+                <span className="layer-name">{names.get(o.id)}</span>
+              )}
               {out && (
                 <span className="layer-outside" title="Outside the label">
                   <span className="sr-only">, outside the label</span>
@@ -221,5 +244,43 @@ export function LayersPanel({
         Back
       </p>
     </div>
+  )
+}
+
+/** In-place name editor: Enter or leaving saves, Escape cancels. */
+function RenameField({
+  initial,
+  placeholder,
+  onDone,
+}: {
+  initial: string
+  placeholder: string
+  /** The new name (trimmed, '' = automatic), or undefined when cancelled. */
+  onDone: (name?: string) => void
+}) {
+  const done = useRef(false)
+  const finish = (name?: string) => {
+    if (done.current) return
+    done.current = true
+    onDone(name)
+  }
+  return (
+    <input
+      className="layer-rename"
+      aria-label="Layer name"
+      defaultValue={initial}
+      placeholder={placeholder}
+      autoFocus
+      onFocus={(e) => e.target.select()}
+      onClick={(e) => e.stopPropagation()}
+      onDoubleClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      onKeyDown={(e) => {
+        e.stopPropagation()
+        if (e.key === 'Enter') finish(e.currentTarget.value.trim())
+        if (e.key === 'Escape') finish()
+      }}
+      onBlur={(e) => finish(e.currentTarget.value.trim())}
+    />
   )
 }

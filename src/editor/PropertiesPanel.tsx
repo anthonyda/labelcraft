@@ -20,6 +20,7 @@ import {
   sizeToLabel,
 } from '../model/labelSizes'
 import { orientationOf } from '../model/ops'
+import { baseLayerName } from '../model/layerNames'
 import { labelSizePx } from '../model/units'
 import { useKnownModel } from '../printer/usePrinter'
 import { Button } from '../ui/icons'
@@ -184,6 +185,13 @@ function ObjectFields({ o }: { o: LabelObject }) {
   return (
     <>
       <FieldGroup title={TYPE_NAMES[o.type]}>
+        {/* R21.AC10: rename the layer (also how phones rename). */}
+        <TextField
+          label="Name"
+          value={o.name ?? ''}
+          placeholder={baseLayerName(o)}
+          onChange={(name) => set({ name: name || undefined }, 'name')}
+        />
         {o.type === 'text' && (
           <>
             <TextField

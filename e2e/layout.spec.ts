@@ -307,3 +307,13 @@ test('desktop: toolbar rows are aligned', async ({ page }) => {
   }
   expect(Math.max(...xs) - Math.min(...xs)).toBeLessThan(1)
 })
+
+// R20.AC4: the favicon is the header logo's own drawing.
+test('favicon matches the header logo', async ({ page, request }) => {
+  const logo = await page
+    .locator('h1.brand svg.logo path')
+    .evaluateAll((ps) => ps.map((p) => p.getAttribute('d')))
+  const href = await page.locator('link[rel="icon"]').getAttribute('href')
+  const svg = await (await request.get(new URL(href!, page.url()).href)).text()
+  for (const d of logo) expect(svg).toContain(`d="${d}"`)
+})

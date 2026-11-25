@@ -44,4 +44,21 @@ describe('layer names', () => {
       c: 'Rectangle 2',
     })
   })
+
+  // R21.AC10
+  it('uses names given by the user, as they are', () => {
+    const doc = newDoc()
+    doc.objects.push(
+      obj('rect', { id: 'a', name: '  Border ' }),
+      obj('rect', { id: 'b' }),
+      obj('rect', { id: 'c' }),
+      obj('text', { id: 'd', text: 'Hi', name: '' }),
+    )
+    expect(Object.fromEntries(layerNames(doc))).toEqual({
+      a: 'Border',
+      b: 'Rectangle 1',
+      c: 'Rectangle 2',
+      d: 'Hi',
+    })
+  })
 })
