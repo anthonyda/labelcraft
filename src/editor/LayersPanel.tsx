@@ -99,49 +99,61 @@ export function LayersPanel({
   }
 
   return (
-    <div
-      ref={listRef}
-      className="layers-list"
-      role="listbox"
-      aria-label="Layers"
-      aria-multiselectable="true"
-      tabIndex={0}
-      aria-activedescendant={active ? `${listId}-${active}` : undefined}
-      onKeyDown={onKeyDown}
-    >
-      {rows.map((o) => {
-        const selected = selection.includes(o.id)
-        const out = outside.includes(o.id)
-        return (
-          <div
-            key={o.id}
-            id={`${listId}-${o.id}`}
-            data-layer={o.id}
-            role="option"
-            aria-selected={selected}
-            className={[
-              'layer',
-              selected && 'selected',
-              o.id === active && 'active',
-              out && 'outside',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            onClick={(e) => {
-              pick(o.id, e.shiftKey || e.ctrlKey || e.metaKey)
-              if (!(e.shiftKey || e.ctrlKey || e.metaKey)) onPicked?.()
-            }}
-          >
-            <Icon name={TYPE_ICONS[o.type]} />
-            <span className="layer-name">{names.get(o.id)}</span>
-            {out && (
-              <span className="layer-outside" title="Outside the label">
-                <span className="sr-only">, outside the label</span>
-              </span>
-            )}
-          </div>
-        )
-      })}
+    <div className="layers-stack">
+      {/* R21.AC8: which end is front and which is back. */}
+      <p className="layers-end" aria-hidden="true">
+        <Icon name="toFront" />
+        Front
+      </p>
+      <div
+        ref={listRef}
+        className="layers-list"
+        role="listbox"
+        aria-label="Layers"
+        aria-multiselectable="true"
+        tabIndex={0}
+        aria-activedescendant={active ? `${listId}-${active}` : undefined}
+        aria-description="Top is front, bottom is back"
+        onKeyDown={onKeyDown}
+      >
+        {rows.map((o) => {
+          const selected = selection.includes(o.id)
+          const out = outside.includes(o.id)
+          return (
+            <div
+              key={o.id}
+              id={`${listId}-${o.id}`}
+              data-layer={o.id}
+              role="option"
+              aria-selected={selected}
+              className={[
+                'layer',
+                selected && 'selected',
+                o.id === active && 'active',
+                out && 'outside',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onClick={(e) => {
+                pick(o.id, e.shiftKey || e.ctrlKey || e.metaKey)
+                if (!(e.shiftKey || e.ctrlKey || e.metaKey)) onPicked?.()
+              }}
+            >
+              <Icon name={TYPE_ICONS[o.type]} />
+              <span className="layer-name">{names.get(o.id)}</span>
+              {out && (
+                <span className="layer-outside" title="Outside the label">
+                  <span className="sr-only">, outside the label</span>
+                </span>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      <p className="layers-end" aria-hidden="true">
+        <Icon name="toBack" />
+        Back
+      </p>
     </div>
   )
 }

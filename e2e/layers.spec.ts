@@ -25,6 +25,17 @@ test('lists layers front-most first and selects from the list', async ({
   await expect(
     page.getByRole('complementary', { name: 'Layers' }),
   ).toBeVisible()
+  // R21.AC8: the list says which end is front and which is back.
+  const panel = page.getByRole('complementary', { name: 'Layers' })
+  const front = (await panel.getByText('Front', { exact: true }).boundingBox())!
+  const back = (await panel.getByText('Back', { exact: true }).boundingBox())!
+  const rows = (await list(page).boundingBox())!
+  expect(front.y).toBeLessThan(rows.y)
+  expect(back.y).toBeGreaterThanOrEqual(rows.y + rows.height - 1)
+  await expect(list(page)).toHaveAttribute(
+    'aria-description',
+    'Top is front, bottom is back',
+  )
   await expect(list(page).getByRole('option')).toHaveText([
     QR_NAME,
     'Hello from labelcraft',

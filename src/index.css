@@ -689,3 +689,20 @@ fieldset,
   padding-inline: 0.25rem;
   opacity: 0.75;
 }
+
+.layers-end {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.25rem 0;
+  padding-inline: 0.5rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+}
+
+.layers-end .icon {
+  width: 16px;
+  height: 16px;
+}
