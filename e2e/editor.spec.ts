@@ -171,6 +171,41 @@ test('zoom is real size, with steps, typed values and Fit', async ({
   expect(Math.round(240 * (await scale()))).toBe(113)
 })
 
+// R4.AC9: calibrate actual size against a bank card.
+test('calibrating makes actual size match the screen', async ({ page }) => {
+  await openPanel(page, 'Edit')
+  const actual = page.getByRole('button', { name: /^Actual size/ })
+  await expect(actual).toHaveText('Actual size (approx.)')
+
+  await page.getByRole('button', { name: 'Calibrate…' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Calibrate actual size' })
+  // 428 px for 85.6 mm = 5 CSS px per mm.
+  await dialog.getByLabel('Card width on screen').fill('428')
+  await expect(dialog.getByTestId('calibration-card')).toHaveCSS(
+    'width',
+    '428px',
+  )
+  await dialog.getByRole('button', { name: 'Save' }).click()
+  await expect(dialog).toBeHidden()
+
+  await openPanel(page, 'Edit')
+  await expect(actual).toHaveText('Actual size')
+  await actual.click()
+  const canvas = page.getByTestId('editor-canvas')
+  await expect
+    .poll(async () => Number(await canvas.getAttribute('data-scale')))
+    .toBeCloseTo((5 * 25.4) / 203, 5)
+
+  // Remembered on the next visit; Reset goes back to the default.
+  await page.reload()
+  await openPanel(page, 'Edit')
+  await expect(actual).toHaveText('Actual size')
+  await page.getByRole('button', { name: 'Calibrate…' }).click()
+  await dialog.getByRole('button', { name: 'Reset to default' }).click()
+  await openPanel(page, 'Edit')
+  await expect(actual).toHaveText('Actual size (approx.)')
+})
+
 // R4.AC8: Ctrl + mouse wheel zooms smoothly.
 test('ctrl + wheel zooms', async ({ page }) => {
   test.skip(isPhone(page), 'mouse wheel')

@@ -1,4 +1,6 @@
 /** Editing tool groups shared by the desktop toolbar and the phone Edit sheet (T3.4). */
+import { useScreenScale } from '../ui/calibration'
+import { CalibrateDialog } from '../ui/CalibrateDialog'
 import { Button, Icon, type IconName } from '../ui/icons'
 import { useEditorState, useEditorStore } from './useEditor'
 import { useState } from 'react'
@@ -23,6 +25,8 @@ export function EditTools({
   const store = useEditorStore()
   useEditorState() // re-render on changes
   const none = store.selection.length === 0
+  const { calibrated } = useScreenScale()
+  const [calibrating, setCalibrating] = useState(false)
   const button = (
     name: string,
     icon: IconName,
@@ -80,14 +84,25 @@ export function EditTools({
           <Button icon="fit" onClick={() => setZoom('fit')}>
             Fit
           </Button>
-          {/* R4.AC8: 100%, the label's real size. */}
+          {/* R4.AC8–AC9: 100%, the label's real size (exact once calibrated). */}
           <Button
             icon="actualSize"
             onClick={() => setZoom(1)}
-            title="Show the label at its real size (100%)"
+            title={
+              calibrated
+                ? 'Show the label at its real size (100%)'
+                : 'Approximate real size: calibrate this screen for an exact match'
+            }
           >
-            Actual size
+            {calibrated ? 'Actual size' : 'Actual size (approx.)'}
           </Button>
+          <Button icon="ruler" onClick={() => setCalibrating(true)}>
+            Calibrate…
+          </Button>
+          <CalibrateDialog
+            open={calibrating}
+            onClose={() => setCalibrating(false)}
+          />
         </div>
       </div>
       <div className="group" role="group" aria-label="Arrange">

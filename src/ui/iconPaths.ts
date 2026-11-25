@@ -55,6 +55,8 @@ export const ICONS = {
   labels:
     'M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z',
   add: 'M12 5v14 M5 12h14',
+  minus: 'M5 12h14',
+  ruler: 'M3 8h18v8H3z M7 8v3 M11 8v4 M15 8v3 M19 8v4',
   layers: 'M12 3l9 5-9 5-9-5z M3 13l9 5 9-5 M3 17l9 5 9-5',
   edit: 'M4 20h4L19 9l-4-4L4 16z M14 6l4 4',
   properties:

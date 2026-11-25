@@ -10,16 +10,25 @@ export const ZOOM_EPS = 0.001
 /** The editor's zoom: a real-size factor, or fit to the canvas. */
 export type Zoom = number | 'fit'
 
-/** CSS px per inch, as browsers define it. */
-const CSS_DPI = 96
+/** CSS px per mm as browsers define it (96 per inch), before calibration. */
+const CSS_PX_PER_MM = 96 / 25.4
 
-/** Screen (CSS) px per printer dot at a zoom (R4.AC1). */
-export const zoomToScale = (zoom: number, dpi: number): number =>
-  (zoom * CSS_DPI) / dpi
+/**
+ * Screen (CSS) px per printer dot at a zoom (R4.AC1). `pxPerMm` is the
+ * screen's CSS px per real mm (R4.AC9 calibration).
+ */
+export const zoomToScale = (
+  zoom: number,
+  dpi: number,
+  pxPerMm = CSS_PX_PER_MM,
+): number => (zoom * pxPerMm * 25.4) / dpi
 
 /** The zoom that gives a scale (screen px per printer dot). */
-export const scaleToZoom = (scale: number, dpi: number): number =>
-  (scale * dpi) / CSS_DPI
+export const scaleToZoom = (
+  scale: number,
+  dpi: number,
+  pxPerMm = CSS_PX_PER_MM,
+): number => (scale * dpi) / (pxPerMm * 25.4)
 
 export const clampZoom = (zoom: number): number =>
   Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom))

@@ -12,6 +12,7 @@ import { labelSizePx, mmToPx, ptToPx, pxToMm } from '../model/units'
 import { renderFrame } from '../render/frame'
 import { inkOutsideBox } from '../render/inkBounds'
 import { objectPixelBox } from '../render/renderObject'
+import { useScreenScale } from '../ui/calibration'
 import { COARSE_POINTER_QUERY, useMediaQuery } from '../ui/useMediaQuery'
 import type { ObjectPatch } from './store'
 import {
@@ -212,14 +213,15 @@ export function EditorCanvas({
     (container.width - 2 * CANVAS_PADDING) / label.width,
     (container.height - 2 * CANVAS_PADDING) / label.height,
   )
-  const fitZoom = clampZoom(scaleToZoom(fit, dpi))
+  const { pxPerMm } = useScreenScale()
+  const fitZoom = clampZoom(scaleToZoom(fit, dpi, pxPerMm))
   useEffect(() => {
     if (Number.isFinite(fitZoom)) onFitZoom(fitZoom)
   }, [fitZoom, onFitZoom])
   // In Fit mode the scale comes straight from this render's container size,
   // so it never lags behind a resize.
   const zoom = zoomSetting === 'fit' ? fitZoom : zoomSetting
-  const scale = zoomSetting === 'fit' ? fit : zoomToScale(zoom, dpi)
+  const scale = zoomSetting === 'fit' ? fit : zoomToScale(zoom, dpi, pxPerMm)
   const stageW = Math.max(
     container.width,
     label.width * scale + 2 * CANVAS_PADDING,

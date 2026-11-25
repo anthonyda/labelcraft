@@ -17,6 +17,9 @@ describe('zoom', () => {
     // A 30 mm label (240 dots at 203 dpi) is 113 CSS px wide at 100%.
     expect(Math.round(240 * zoomToScale(1, 203))).toBe(113)
     expect(scaleToZoom(zoomToScale(2.5, 300), 300)).toBeCloseTo(2.5)
+    // Calibrated screen (R4.AC9): 5 CSS px per real mm.
+    expect(zoomToScale(1, 203, 5)).toBeCloseTo((5 * 25.4) / 203)
+    expect(scaleToZoom(zoomToScale(1.5, 203, 5), 203, 5)).toBeCloseTo(1.5)
   })
 
   it('steps through the ladder from 10% to 2000%', () => {

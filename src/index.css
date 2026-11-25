@@ -837,3 +837,27 @@ button.primary:not(:disabled):active {
 button.icon-only {
   padding: 0;
 }
+
+/* Calibrate actual size (R4.AC9) */
+.calibrate-stage {
+  overflow: auto;
+  padding: 0.5rem 0;
+}
+
+.calibrate-card {
+  border: 2px solid var(--accent);
+  border-radius: 3.18mm;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  box-sizing: border-box;
+}
+
+.calibrate-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.calibrate-controls input[type='range'] {
+  flex: 1;
+  min-width: 0;
+}
