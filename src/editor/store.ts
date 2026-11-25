@@ -44,6 +44,8 @@ export type EditorState = {
   file: FileInfo
   /** Increases each time a document is loaded (new, open, import, restore). */
   loads: number
+  /** Latest notice to show (R8.AC5), until dismissed or replaced. */
+  notice?: EditorNotice
 }
 
 /** Which named label is being edited, and the state it was last saved in. */
@@ -63,17 +65,24 @@ export const COPY_OFFSET_MM = 2
  * A barcode narrower than one printer dot per bar can't be drawn and showed
  * up blank. Widen it to its narrowest printable width, keeping its centre.
  */
-const keepBarcodesPrintable = (doc: LabelDoc): LabelDoc => {
-  let changed = false
+const keepBarcodesPrintable = (
+  doc: LabelDoc,
+): { doc: LabelDoc; widenedTo?: number } => {
+  let widenedTo: number | undefined
   const objects = doc.objects.map((o) => {
     if (o.type !== 'barcode') return o
     const min = minBarcodeWidthMm(o.content, o.format, doc.label.dpi)
     if (min === undefined || o.width >= min) return o
-    changed = true
+    widenedTo = min
     return { ...o, x: o.x - (min - o.width) / 2, width: min }
   })
-  return changed ? { ...doc, objects } : doc
+  return widenedTo === undefined
+    ? { doc }
+    : { doc: { ...doc, objects }, widenedTo }
 }
+
+/** A short message for the user, e.g. why something changed by itself. */
+export type EditorNotice = { id: number; message: string }
 
 export class EditorStore {
   private state: EditorState
@@ -135,7 +144,8 @@ export class EditorStore {
     selection = this.state.selection,
     mergeKey?: string,
   ): void {
-    doc = keepBarcodesPrintable(doc)
+    const kept = keepBarcodesPrintable(doc)
+    doc = kept.doc
     const merge = mergeKey !== undefined && mergeKey === this.mergeKey
     this.mergeKey = mergeKey
     this.set({
@@ -143,6 +153,13 @@ export class EditorStore {
         ? replacePresent(this.state.history, doc)
         : commit(this.state.history, doc),
       selection: this.validSelection(doc, selection),
+      // R8.AC5: say why the barcode grew back by itself.
+      ...(kept.widenedTo !== undefined && {
+        notice: {
+          id: (this.state.notice?.id ?? 0) + 1,
+          message: `Barcode widened to ${kept.widenedTo.toFixed(1)} mm: each bar needs at least one printer dot, so it can't be narrower. Shorten its content to make it smaller.`,
+        },
+      }),
     })
   }
 
@@ -167,6 +184,10 @@ export class EditorStore {
       this.state.selection,
       mergeKey,
     )
+  }
+
+  dismissNotice(): void {
+    this.set({ notice: undefined })
   }
 
   /** R22: switch between landscape and portrait, turning the design. */

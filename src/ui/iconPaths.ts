@@ -10,6 +10,9 @@ export const ICONS = {
   roll: 'M8 7a5 5 0 1 0 0 10a5 5 0 0 0 0-10z M8 11.5v1 M8 7h12v10H8',
   stop: 'M6 6h12v12H6z',
   check: 'M5 12l5 5 9-10',
+  warning: 'M12 3l10 18H2z M12 10v5 M12 18h.01',
+  info: 'M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18z M12 11v6 M12 7.5h.01',
+  select: 'M4 4l6 16 2.5-6.5L19 11z M14 14l6 6',
   close: 'M6 6l12 12 M18 6L6 18',
   // Labels
   new: 'M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z M14 3v5h5 M12 11v6 M9 14h6',

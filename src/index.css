@@ -781,3 +781,59 @@ button.primary:not(:disabled):active {
   display: block;
   margin-bottom: 0.25rem;
 }
+
+/* Banners above the canvas (R8.AC5, R19.AC5) */
+/* Over the top of the canvas, so the label doesn't move when one appears. */
+.editor-main {
+  position: relative;
+}
+
+.notices {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 2;
+  display: grid;
+  gap: 0.25rem;
+  pointer-events: none;
+}
+
+.notices > * {
+  pointer-events: auto;
+}
+
+.notices:empty {
+  display: none;
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.5rem 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.12);
+}
+
+.banner > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.banner-warning {
+  background: color-mix(in srgb, var(--error) 10%, Canvas);
+  color: var(--error);
+}
+
+.banner-info {
+  background: color-mix(in srgb, var(--accent) 10%, Canvas);
+}
+
+.banner button {
+  flex: none;
+}
+
+button.icon-only {
+  padding: 0;
+}

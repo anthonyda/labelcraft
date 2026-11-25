@@ -196,9 +196,10 @@ test('objects outside the label are outlined and warned about', async ({
     'data-outside',
     /\S/,
   )
-  // Deselect (click beside the label), so the selection frame doesn't cover it.
+  // Deselect (click beside the label, below the banner), so the selection
+  // frame doesn't cover the outline.
   const box = (await page.getByTestId('editor-canvas').boundingBox())!
-  await page.mouse.click(box.x + 4, box.y + 4)
+  await page.mouse.click(box.x + 4, box.y + box.height - 4)
   await expect(status(page)).toContainText('0 selected')
   await expect.poll(() => redPixels(page)).toBeGreaterThan(20)
 

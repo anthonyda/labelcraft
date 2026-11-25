@@ -250,6 +250,18 @@ describe('barcodes stay printable', () => {
     expect(s.doc.objects[0].width).toBeGreaterThan(13)
   })
 
+  // R8.AC5: the user is told why.
+  it('leaves a notice explaining the widening', () => {
+    const s = store(barcode())
+    expect(s.getState().notice).toBeUndefined()
+    s.updateObjects([{ id: 'b', patch: { width: 5 } }])
+    expect(s.getState().notice?.message).toMatch(
+      /^Barcode widened to 12\.\d mm: each bar needs at least one printer dot/,
+    )
+    s.dismissNotice()
+    expect(s.getState().notice).toBeUndefined()
+  })
+
   it('leaves wide and invalid barcodes alone', () => {
     const s = store(barcode())
     s.updateObject('b', { width: 20 })

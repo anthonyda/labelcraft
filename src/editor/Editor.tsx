@@ -14,6 +14,7 @@ import { EditTools } from './EditTools'
 import { EditorCanvas } from './EditorCanvas'
 import { FileMenu, FileStatus } from './FileMenu'
 import { LayersPanel } from './LayersPanel'
+import { Notices } from './Notices'
 import { imageObjectFromFile, isImageFile } from './images'
 import { PropertiesPanel } from './PropertiesPanel'
 import { commandForKey, isTypingTarget, type Command } from './shortcuts'
@@ -165,6 +166,7 @@ export function Editor({
           </aside>
         )}
         <div className="editor-main">
+          <Notices />
           <EditorCanvas
             zoom={zoomSetting}
             setZoom={setZoom}
