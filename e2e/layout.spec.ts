@@ -24,6 +24,7 @@ const PANEL_CONTENT: Record<PanelName, string[]> = {
     'Export PNG',
   ],
   Add: ['Text', 'Rectangle', 'Ellipse', 'Line', 'QR code', 'Barcode', 'Image'],
+  Layers: [],
   Edit: [
     'Undo',
     'Redo',

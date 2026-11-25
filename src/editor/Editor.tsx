@@ -13,6 +13,7 @@ import { AddMenu } from './AddMenu'
 import { EditTools } from './EditTools'
 import { EditorCanvas } from './EditorCanvas'
 import { FileMenu, FileStatus } from './FileMenu'
+import { LayersPanel } from './LayersPanel'
 import { imageObjectFromFile, isImageFile } from './images'
 import { PropertiesPanel } from './PropertiesPanel'
 import { commandForKey, isTypingTarget, type Command } from './shortcuts'
@@ -73,11 +74,12 @@ function StatusLine() {
   )
 }
 
-type Panel = 'labels' | 'add' | 'edit' | 'properties'
+type Panel = 'labels' | 'add' | 'layers' | 'edit' | 'properties'
 
 const PANELS: [Panel, string, IconName][] = [
   ['labels', 'Labels', 'labels'],
   ['add', 'Add', 'add'],
+  ['layers', 'Layers', 'layers'],
   ['edit', 'Edit', 'edit'],
   ['properties', 'Properties', 'properties'],
 ]
@@ -146,6 +148,12 @@ export function Editor({
       )}
 
       <div className="workspace">
+        {!phone && (
+          <aside className="layers" aria-labelledby="layers-title">
+            <h2 id="layers-title">Layers</h2>
+            <LayersPanel />
+          </aside>
+        )}
         <div className="editor-main">
           <EditorCanvas zoom={zoom} setZoom={setZoom} />
           <StatusLine />
@@ -170,6 +178,14 @@ export function Editor({
             onClose={() => setPanel(undefined)}
           >
             <AddMenu onAdded={() => setPanel(undefined)} />
+          </Sheet>
+          <Sheet
+            id="sheet-layers"
+            title="Layers"
+            open={panel === 'layers'}
+            onClose={() => setPanel(undefined)}
+          >
+            <LayersPanel onPicked={() => setPanel(undefined)} />
           </Sheet>
           <Sheet
             id="sheet-edit"

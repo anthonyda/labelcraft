@@ -4,7 +4,7 @@ import { expect, type Page } from '@playwright/test'
 export const isPhone = (page: Page): boolean =>
   (page.viewportSize()?.width ?? 1280) < 900
 
-export type PanelName = 'Labels' | 'Add' | 'Edit' | 'Properties'
+export type PanelName = 'Labels' | 'Add' | 'Layers' | 'Edit' | 'Properties'
 
 /** Make a tool panel reachable: on phones open its bottom sheet. */
 export const openPanel = async (page: Page, name: PanelName) => {
