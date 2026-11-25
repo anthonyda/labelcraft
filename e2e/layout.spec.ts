@@ -293,3 +293,17 @@ test('desktop: Delete hover is red', async ({ page }) => {
     .poll(() => del.evaluate((b) => getComputedStyle(b).color))
     .toBe('rgb(185, 28, 28)')
 })
+
+// Toolbar rows line up: the first button of every row starts at the same x.
+test('desktop: toolbar rows are aligned', async ({ page }) => {
+  test.skip(isPhone(page), 'desktop toolbar')
+  const toolbar = page.getByRole('toolbar', { name: 'Editor tools' })
+  const xs: number[] = []
+  for (const name of ['New', 'Undo', 'Text', 'Align left']) {
+    xs.push(
+      (await toolbar.getByRole('button', { name, exact: true }).boundingBox())!
+        .x,
+    )
+  }
+  expect(Math.max(...xs) - Math.min(...xs)).toBeLessThan(1)
+})

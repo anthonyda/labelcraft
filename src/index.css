@@ -919,3 +919,9 @@ button.icon-only {
 .sheet .row-label {
   display: none;
 }
+
+/* The Edit row spaces its groups 1rem apart; keep its first button in line
+   with the other rows (0.25rem after the label). */
+.toolbar .group-row > .row-label {
+  margin-inline-end: -0.75rem;
+}
