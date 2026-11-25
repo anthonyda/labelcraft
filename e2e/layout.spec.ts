@@ -158,10 +158,12 @@ test('no horizontal page scroll at 360 px', async ({ page }) => {
         document.documentElement.scrollWidth -
         document.documentElement.clientWidth,
     )
-  expect(await overflow()).toBeLessThanOrEqual(0)
+  // A desktop window switches to the phone layout first (one render later).
+  await expect(bottomBar(page)).toBeVisible()
+  await expect.poll(overflow).toBeLessThanOrEqual(0)
   for (const panel of Object.keys(PANEL_CONTENT) as PanelName[]) {
     await openPanel(page, panel)
-    expect(await overflow(), panel).toBeLessThanOrEqual(0)
+    await expect.poll(overflow, { message: panel }).toBeLessThanOrEqual(0)
   }
 })
 
