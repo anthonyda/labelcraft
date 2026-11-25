@@ -96,6 +96,9 @@ export const drawQr = (
 }
 
 /** Barcode centred in a width × height px box, whole-pixel bar widths. */
+/** Smallest readable digits, in printer dots. */
+const MIN_TEXT_PX = 7
+
 export const drawBarcode = (
   content: string,
   format: BarcodeFormat,
@@ -113,20 +116,39 @@ export const drawBarcode = (
   if (moduleW < 1) {
     return { canvas, warning: 'Barcode is too narrow to print; make it wider.' }
   }
-  const textH = showText ? Math.ceil(fontPx * 1.2) : 0
+  const barsW = enc.bits.length * moduleW
+  // The digits must fit under the bars: shrink the font to the bars' width
+  // and to at most 40% of the height (a fixed size cut digits off).
+  let textPx = 0
+  let warning: string | undefined
+  if (showText) {
+    ctx.font = `${fontPx}px monospace`
+    const measured = ctx.measureText(enc.text).width
+    textPx = Math.min(
+      fontPx,
+      Math.floor((fontPx * barsW) / Math.max(1, measured)),
+      Math.floor((height * 0.4) / 1.2),
+    )
+    if (textPx < MIN_TEXT_PX) {
+      textPx = 0
+      warning =
+        "Barcode text doesn't fit; make the barcode wider or turn off Show text."
+    }
+  }
+  const textH = textPx ? Math.ceil(textPx * 1.2) : 0
   const barsH = height - textH
   if (barsH < 1) {
     return { canvas, warning: 'Barcode is too short to print; make it taller.' }
   }
-  const ox = Math.floor((width - enc.bits.length * moduleW) / 2)
+  const ox = Math.floor((width - barsW) / 2)
   for (let i = 0; i < enc.bits.length; i++) {
     if (enc.bits[i] === '1') ctx.fillRect(ox + i * moduleW, 0, moduleW, barsH)
   }
-  if (showText) {
-    ctx.font = `${fontPx}px monospace`
+  if (textPx) {
+    ctx.font = `${textPx}px monospace`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
-    ctx.fillText(enc.text, width / 2, barsH + Math.floor(fontPx * 0.1))
+    ctx.fillText(enc.text, width / 2, barsH + Math.floor(textPx * 0.1))
   }
-  return { canvas }
+  return { canvas, warning }
 }

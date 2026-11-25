@@ -11,6 +11,7 @@ import { createObject, newDoc } from '../model/factory'
 import type { LabelDoc, LabelObject, ObjectType } from '../model/types'
 import { blackRatio, isMonochrome, type Pixels } from './bitmap'
 import { renderLabel } from './renderLabel'
+import { renderObject } from './renderObject'
 
 const pixels = (canvas: HTMLCanvasElement): Pixels =>
   canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height)
@@ -366,6 +367,59 @@ describe('codes', () => {
     expect(blackRatio(without.px, band)).toBeGreaterThan(0.2) // bars reach the bottom
     expect(blackRatio(withText.px, band)).toBeLessThan(
       blackRatio(without.px, band),
+    )
+  })
+
+  // Bug fix: the digits were drawn at a fixed size and cut off on narrow
+  // barcodes. They now shrink to fit under the bars.
+  it('fits every digit of the text inside a narrow barcode', async () => {
+    const o = {
+      ...createObject('barcode', newDoc().label),
+      width: 15.27,
+      height: 5.88,
+      content: '012345678901',
+      format: 'CODE128',
+      showText: true,
+    } as LabelObject
+    const { canvas, warnings } = await renderObject(o, 203)
+    expect(warnings).toEqual([])
+    const ctx = canvas.getContext('2d')!
+    const { width, height } = canvas
+    const d = ctx.getImageData(0, 0, width, height).data
+    const inkAt = (x: number, y: number) => d[(y * width + x) * 4 + 3] > 0
+    // Rows of the text band: below the last row where the bars are.
+    let barsEnd = 0
+    for (let y = 0; y < height; y++) {
+      if (inkAt(Math.floor(width / 2), y)) barsEnd = y
+      else if (barsEnd) break
+    }
+    let minX = width
+    let maxX = -1
+    for (let y = barsEnd + 1; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        if (inkAt(x, y)) {
+          minX = Math.min(minX, x)
+          maxX = Math.max(maxX, x)
+        }
+      }
+    }
+    expect(maxX).toBeGreaterThan(minX) // text is drawn
+    expect(minX).toBeGreaterThan(0) // not cut on the left
+    expect(maxX).toBeLessThan(width - 1) // nor on the right
+  })
+
+  it("warns when the barcode text can't fit", async () => {
+    const { warnings } = await render(
+      docWith('barcode', {
+        width: 6,
+        height: 6,
+        content: 'AB',
+        format: 'CODE128',
+        showText: true,
+      } as Partial<LabelObject>),
+    )
+    expect(warnings.map((w) => w.message).join()).toMatch(
+      /text doesn't fit|too narrow/,
     )
   })
 
