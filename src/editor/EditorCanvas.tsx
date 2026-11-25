@@ -165,12 +165,12 @@ function TextEditor({
 }
 
 export function EditorCanvas({
-  zoom,
+  zoom: zoomSetting,
   setZoom,
   onFitZoom,
 }: {
-  /** Zoom in effect: real-size factor (R4.AC1). */
-  zoom: number
+  /** Real-size factor (R4.AC1), or fit to the canvas. */
+  zoom: Zoom
   setZoom: (z: Zoom) => void
   /** Reports the zoom that fits the label in the canvas. */
   onFitZoom: (z: number) => void
@@ -216,7 +216,10 @@ export function EditorCanvas({
   useEffect(() => {
     if (Number.isFinite(fitZoom)) onFitZoom(fitZoom)
   }, [fitZoom, onFitZoom])
-  const scale = zoomToScale(zoom, dpi)
+  // In Fit mode the scale comes straight from this render's container size,
+  // so it never lags behind a resize.
+  const zoom = zoomSetting === 'fit' ? fitZoom : zoomSetting
+  const scale = zoomSetting === 'fit' ? fit : zoomToScale(zoom, dpi)
   const stageW = Math.max(
     container.width,
     label.width * scale + 2 * CANVAS_PADDING,

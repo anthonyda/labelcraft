@@ -165,7 +165,11 @@ export function Editor({
           </aside>
         )}
         <div className="editor-main">
-          <EditorCanvas zoom={zoom} setZoom={setZoom} onFitZoom={setFitZoom} />
+          <EditorCanvas
+            zoom={zoomSetting}
+            setZoom={setZoom}
+            onFitZoom={setFitZoom}
+          />
           <StatusLine />
         </div>
         {!phone && <PropertiesPanel />}
