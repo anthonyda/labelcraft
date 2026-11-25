@@ -182,3 +182,22 @@ export const turnLabel = (doc: LabelDoc): LabelDoc => {
     objects,
   }
 }
+
+/**
+ * R21.AC9: move one object to `index` in drawing order (0 = back), as when a
+ * layer is dragged to a new place.
+ */
+export const moveObject = (
+  doc: LabelDoc,
+  id: string,
+  index: number,
+): LabelDoc => {
+  const from = doc.objects.findIndex((o) => o.id === id)
+  if (from < 0) return doc
+  const objects = [...doc.objects]
+  const [o] = objects.splice(from, 1)
+  const to = Math.max(0, Math.min(objects.length, index))
+  if (to === from) return doc
+  objects.splice(to, 0, o)
+  return { ...doc, objects }
+}

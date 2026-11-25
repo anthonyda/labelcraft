@@ -150,6 +150,9 @@ export function FileMenu() {
   return (
     <>
       <div className="group" role="group" aria-label="Labels">
+        <span className="row-label" aria-hidden="true">
+          Labels
+        </span>
         <Button
           icon="new"
           onClick={() =>

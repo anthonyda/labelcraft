@@ -19,6 +19,7 @@ import {
   deleteObjects,
   duplicateObjects,
   reorderObjects,
+  moveObject,
   setLabelSetup,
   turnLabel,
   updateObject,
@@ -327,6 +328,12 @@ export class EditorStore {
       copies.map((c) => c.id),
     )
     this.set({ pasteCount: this.state.pasteCount + 1 })
+  }
+
+  /** R21.AC9: move a layer to a drawing index (0 = back); one undo step. */
+  moveObject(id: string, index: number): void {
+    const doc = moveObject(this.doc, id, index)
+    if (doc !== this.doc) this.apply(doc)
   }
 
   reorderSelection(direction: ReorderDirection): void {

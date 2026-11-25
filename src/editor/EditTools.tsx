@@ -52,6 +52,9 @@ export function EditTools({
     <>
       {/* History, selection and zoom share one row. */}
       <div className="group-row">
+        <span className="row-label" aria-hidden="true">
+          Edit
+        </span>
         <div className="group" role="group" aria-label="History">
           {button('Undo', 'undo', () => store.undo(), !store.canUndo)}
           {button('Redo', 'redo', () => store.redo(), !store.canRedo)}
@@ -105,19 +108,15 @@ export function EditTools({
           <CalibrateDialog
             open={calibrating}
             onClose={() => setCalibrating(false)}
+            label={store.doc.label}
           />
         </div>
       </div>
       {afterFirstRow}
-      <div className="group" role="group" aria-label="Arrange">
-        {button('To front', 'toFront', () => store.reorderSelection('front'))}
-        {button('Forward', 'forward', () => store.reorderSelection('forward'))}
-        {button('Backward', 'backward', () =>
-          store.reorderSelection('backward'),
-        )}
-        {button('To back', 'toBack', () => store.reorderSelection('back'))}
-      </div>
       <div className="group" role="group" aria-label="Align to label">
+        <span className="row-label" aria-hidden="true">
+          Align
+        </span>
         {button('Align left', 'alignLeft', () => store.alignSelection('left'))}
         {button('Align centre', 'alignCentre', () =>
           store.alignSelection('center'),

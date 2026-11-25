@@ -6,6 +6,7 @@ import {
   boundingBox,
   deleteObjects,
   duplicateObjects,
+  moveObject,
   orientationOf,
   reorderObjects,
   setLabelSetup,
@@ -222,5 +223,27 @@ describe('turnLabel', () => {
       expect(o.y).toBeCloseTo(before.y, 9)
       expect(o.rotation).toBe(before.rotation)
     })
+  })
+})
+
+// R21.AC9
+describe('moveObject', () => {
+  const ids = (d: LabelDoc) => d.objects.map((o) => o.id)
+  const doc = () => {
+    const d = newDoc()
+    for (const id of ['a', 'b', 'c']) {
+      d.objects.push({ ...createObject('rect', d.label), id } as LabelObject)
+    }
+    return d
+  }
+  it('moves one object to a drawing index', () => {
+    expect(ids(moveObject(doc(), 'a', 2))).toEqual(['b', 'c', 'a'])
+    expect(ids(moveObject(doc(), 'c', 0))).toEqual(['c', 'a', 'b'])
+    expect(ids(moveObject(doc(), 'b', 99))).toEqual(['a', 'c', 'b'])
+  })
+  it('returns the same document when nothing moves', () => {
+    const d = doc()
+    expect(moveObject(d, 'b', 1)).toBe(d)
+    expect(moveObject(d, 'x', 0)).toBe(d)
   })
 })

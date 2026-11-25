@@ -171,7 +171,7 @@ test('zoom is real size, with steps, typed values and Fit', async ({
   expect(Math.round(240 * (await scale()))).toBe(113)
 })
 
-// R4.AC9: calibrate actual size against a bank card.
+// R4.AC9: calibrate actual size against the current label.
 test('calibrating makes actual size match the screen', async ({ page }) => {
   await openPanel(page, 'Edit')
   const actual = page.getByRole('button', { name: /^Actual size/ })
@@ -179,12 +179,20 @@ test('calibrating makes actual size match the screen', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Calibrate…' }).click()
   const dialog = page.getByRole('dialog', { name: 'Calibrate actual size' })
-  // 428 px for 85.6 mm = 5 CSS px per mm.
-  await dialog.getByLabel('Card width on screen').fill('428')
-  await expect(dialog.getByTestId('calibration-card')).toHaveCSS(
-    'width',
-    '428px',
-  )
+  await expect(dialog).toContainText('Hold a 30 × 12 mm label')
+  const outline = dialog.getByTestId('calibration-label')
+  const slider = dialog.getByLabel('Outline size')
+
+  // The outline never grows past the dialog.
+  await slider.fill('12')
+  const o = (await outline.boundingBox())!
+  const d = (await dialog.boundingBox())!
+  expect(o.x).toBeGreaterThanOrEqual(d.x)
+  expect(o.x + o.width).toBeLessThanOrEqual(d.x + d.width)
+
+  // 5 CSS px per mm: the 30 mm label outline is 150 px wide.
+  await slider.fill('5')
+  await expect(outline).toHaveCSS('width', '150px')
   await dialog.getByRole('button', { name: 'Save' }).click()
   await expect(dialog).toBeHidden()
 

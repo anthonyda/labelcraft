@@ -2,7 +2,14 @@
  * Layers panel (T6d.2, T6d.3, spec R21): every object, front-most first, as a
  * multi-select list box. Selection is shared with the canvas.
  */
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type PointerEvent,
+} from 'react'
 import { layerNames } from '../model/layerNames'
 import type { LabelObject } from '../model/types'
 import { Icon, type IconName } from '../ui/icons'
@@ -35,6 +42,8 @@ export function LayersPanel({
   const listRef = useRef<HTMLDivElement>(null)
   const [activeId, setActiveId] = useState<string>()
   const active = rows.find((o) => o.id === activeId)?.id ?? selection[0]
+  /** R21.AC9: row being dragged and the slot (0..rows) it would land in. */
+  const [drag, setDrag] = useState<{ id: string; slot: number }>()
 
   // R21.AC2: the selected row scrolls into view.
   useEffect(() => {
@@ -59,8 +68,46 @@ export function LayersPanel({
     setActiveId(id)
   }
 
+  /** Insertion slot (0 = above the first row) under a pointer position. */
+  const slotAt = (clientY: number) => {
+    const els = Array.from(
+      listRef.current?.querySelectorAll<HTMLElement>('[data-layer]') ?? [],
+    )
+    return els.filter((el) => {
+      const r = el.getBoundingClientRect()
+      return r.top + r.height / 2 < clientY
+    }).length
+  }
+
+  const onGripDown = (id: string) => (e: PointerEvent<HTMLSpanElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    setDrag({ id, slot: rows.findIndex((o) => o.id === id) })
+  }
+  const onGripMove = (e: PointerEvent<HTMLSpanElement>) => {
+    if (!drag) return
+    const slot = slotAt(e.clientY)
+    if (slot !== drag.slot) setDrag({ ...drag, slot })
+  }
+  const onGripUp = () => {
+    if (!drag) return
+    const from = rows.findIndex((o) => o.id === drag.id)
+    const row = drag.slot > from ? drag.slot - 1 : drag.slot
+    setDrag(undefined)
+    // Rows are front-most first; drawing order is back-most first.
+    if (row !== from) store.moveObject(drag.id, rows.length - 1 - row)
+  }
+
   // R21.AC3: arrows move, Space/Enter select, Shift extends.
+  // R21.AC9: Alt+Up/Down moves the selected layers.
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      store.reorderSelection(e.key === 'ArrowUp' ? 'forward' : 'backward')
+      e.preventDefault()
+      e.stopPropagation()
+      return
+    }
     const i = Math.max(
       0,
       rows.findIndex((o) => o.id === active),
@@ -116,7 +163,7 @@ export function LayersPanel({
         aria-description="Top is front, bottom is back"
         onKeyDown={onKeyDown}
       >
-        {rows.map((o) => {
+        {rows.map((o, rowIndex) => {
           const selected = selection.includes(o.id)
           const out = outside.includes(o.id)
           return (
@@ -131,6 +178,12 @@ export function LayersPanel({
                 selected && 'selected',
                 o.id === active && 'active',
                 out && 'outside',
+                drag?.id === o.id && 'dragging',
+                drag && drag.slot === rowIndex && 'drop-before',
+                drag &&
+                  rowIndex === rows.length - 1 &&
+                  drag.slot === rows.length &&
+                  'drop-after',
               ]
                 .filter(Boolean)
                 .join(' ')}
@@ -146,6 +199,19 @@ export function LayersPanel({
                   <span className="sr-only">, outside the label</span>
                 </span>
               )}
+              <span
+                className="layer-grip"
+                title="Drag to change the order"
+                aria-hidden="true"
+                data-testid={`grip-${o.id}`}
+                onPointerDown={onGripDown(o.id)}
+                onPointerMove={onGripMove}
+                onPointerUp={onGripUp}
+                onPointerCancel={() => setDrag(undefined)}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Icon name="grip" />
+              </span>
             </div>
           )
         })}

@@ -171,6 +171,7 @@ dialog::backdrop {
 .toolbar .group-row {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.25rem 1rem;
 }
 
@@ -839,16 +840,28 @@ button.icon-only {
 }
 
 /* Calibrate actual size (R4.AC9) */
-.calibrate-stage {
-  overflow: auto;
-  padding: 0.5rem 0;
+.calibrate-dialog {
+  width: min(95vw, 60rem);
 }
 
-.calibrate-card {
+.calibrate-stage {
+  display: grid;
+  place-items: center;
+  min-height: 6rem;
+  padding: 0.5rem 0;
+  overflow: hidden;
+}
+
+.calibrate-label {
+  display: grid;
+  place-items: center;
   border: 2px solid var(--accent);
-  border-radius: 3.18mm;
   background: color-mix(in srgb, var(--accent) 8%, transparent);
   box-sizing: border-box;
+  font-size: 0.75rem;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .calibrate-controls {
@@ -860,4 +873,49 @@ button.icon-only {
 .calibrate-controls input[type='range'] {
   flex: 1;
   min-width: 0;
+}
+
+/* Layer drag and drop (R21.AC9) */
+.layer-grip {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 40px;
+  margin-right: -0.25rem;
+  cursor: grab;
+  touch-action: none;
+  opacity: 0.55;
+}
+
+.layer-grip:hover {
+  opacity: 1;
+}
+
+.layer.dragging {
+  opacity: 0.5;
+}
+
+.layer.drop-before {
+  box-shadow: inset 0 3px 0 var(--accent);
+}
+
+.layer.drop-after {
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+
+/* A label before each toolbar row (desktop) */
+.row-label {
+  flex: none;
+  width: 3.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+}
+
+.phone .row-label,
+.sheet .row-label {
+  display: none;
 }

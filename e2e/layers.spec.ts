@@ -120,3 +120,42 @@ test('phone: tapping a layer selects it and closes the panel', async ({
   await expect(page.getByRole('dialog', { name: 'Layers' })).toBeHidden()
   await expect(status(page)).toContainText('1 selected · text at')
 })
+
+// R21.AC9: drag a layer by its grip to change the order; Alt+arrows.
+test('drag and drop reorders layers', async ({ page }) => {
+  await openPanel(page, 'Layers')
+  const options = list(page).getByRole('option')
+  await expect(options).toHaveText([QR_NAME, 'Hello from labelcraft'])
+
+  const grip = row(page, 'Hello from labelcraft').locator('.layer-grip')
+  const g = (await grip.boundingBox())!
+  const top = (await row(page, QR_NAME).boundingBox())!
+  await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(g.x + g.width / 2, top.y + 4, { steps: 6 })
+  await page.mouse.up()
+  await expect(options).toHaveText(['Hello from labelcraft', QR_NAME])
+  // The grip doesn't select or close the panel.
+  await expect(status(page)).toContainText('0 selected')
+
+  await openPanel(page, 'Edit')
+  await page.getByRole('button', { name: 'Undo', exact: true }).click()
+  await openPanel(page, 'Layers')
+  await expect(options).toHaveText([QR_NAME, 'Hello from labelcraft'])
+})
+
+test('Alt+arrows move the selected layer', async ({ page }) => {
+  test.skip(isPhone(page), 'keyboard')
+  await row(page, 'Hello from labelcraft').click()
+  await list(page).focus()
+  await page.keyboard.press('Alt+ArrowUp')
+  await expect(list(page).getByRole('option')).toHaveText([
+    'Hello from labelcraft',
+    QR_NAME,
+  ])
+  await page.keyboard.press('Alt+ArrowDown')
+  await expect(list(page).getByRole('option')).toHaveText([
+    QR_NAME,
+    'Hello from labelcraft',
+  ])
+})

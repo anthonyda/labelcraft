@@ -32,6 +32,9 @@ export function AddMenu({ onAdded }: { onAdded?: () => void } = {}) {
 
   return (
     <div className="group" role="group" aria-label="Add">
+      <span className="row-label" aria-hidden="true">
+        Add
+      </span>
       {ITEMS.map(([type, name, icon]) => (
         <Button
           key={type}

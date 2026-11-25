@@ -30,8 +30,6 @@ const PANEL_CONTENT: Record<PanelName, string[]> = {
     'Redo',
     'Duplicate',
     'Delete',
-    'To front',
-    'To back',
     'Align left',
     'Align bottom',
     'Zoom in',
