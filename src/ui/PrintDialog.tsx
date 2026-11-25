@@ -11,7 +11,10 @@ import { PrintCancelledError } from '../printer/printerService'
 import { printerService, usePrinter } from '../printer/usePrinter'
 import { renderLabel, type RenderWarning } from '../render/renderLabel'
 import { printLayout, turnCanvas } from '../render/turn'
+import { labelForRoll, sameSize } from '../editor/labelSize'
 import { Button } from './icons'
+
+const mmText = (n: number) => String(Math.round(n * 100) / 100)
 
 const LABEL_TYPES: [LabelType, string][] = [
   [LabelType.WithGaps, 'Labels with gaps'],
@@ -109,6 +112,16 @@ export function PrintDialog({
   }, [doc, open])
 
   // R3.AC3: the printhead covers label height for "left" printers, width otherwise.
+  const rollSize = state.roll?.size
+  const knownModel = model && {
+    model: model.model,
+    printDirection: model.printDirection,
+    printheadPixels: model.printheadPixels,
+    dpi: model.dpi,
+  }
+  const rollMismatch =
+    !!rollSize &&
+    !sameSize(labelForRoll(rollSize, knownModel, doc.label.turned), doc.label)
   const printheadOverflow =
     preview &&
     model &&
@@ -159,6 +172,23 @@ export function PrintDialog({
       <h1 id="print-title">Print</h1>
 
       <h2>Preview</h2>
+      {/* R24.AC3: which size prints, and whether it fits the loaded roll. */}
+      <p className="print-size" data-testid="print-size">
+        {mmText(doc.label.widthMm)} × {mmText(doc.label.heightMm)} mm label
+        {rollSize && (
+          <>
+            {' '}
+            on a {mmText(rollSize.widthMm)} × {mmText(rollSize.lengthMm)} mm
+            roll
+          </>
+        )}
+      </p>
+      {rollMismatch && (
+        <p className="warning" role="note" data-testid="roll-mismatch">
+          The loaded roll is a different size from this label. Check the label
+          size, or use the loaded roll in the Printer dialog.
+        </p>
+      )}
       <CanvasView
         canvas={preview}
         label="Print preview"
@@ -187,18 +217,36 @@ export function PrintDialog({
       )}
 
       <div className="fields">
-        <label>
-          Copies
-          <input
-            type="number"
-            min={1}
-            max={99}
-            value={quantity}
-            onChange={(e) =>
-              setQuantity(Math.max(1, Number(e.target.value) || 1))
-            }
-          />
-        </label>
+        {/* R24.AC3: compact copies stepper. */}
+        <div className="copies">
+          <label htmlFor="print-copies">Copies</label>
+          <div className="stepper">
+            <Button
+              icon="minus"
+              aria-label="Fewer copies"
+              disabled={quantity <= 1}
+              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+            />
+            <input
+              id="print-copies"
+              type="number"
+              min={1}
+              max={99}
+              value={quantity}
+              onChange={(e) =>
+                setQuantity(
+                  Math.min(99, Math.max(1, Number(e.target.value) || 1)),
+                )
+              }
+            />
+            <Button
+              icon="add"
+              aria-label="More copies"
+              disabled={quantity >= 99}
+              onClick={() => setQuantity(Math.min(99, quantity + 1))}
+            />
+          </div>
+        </div>
         <label>
           Darkness {densityValue}
           <input
@@ -208,6 +256,10 @@ export function PrintDialog({
             value={densityValue}
             onChange={(e) => setDensity(Number(e.target.value))}
           />
+          <span className="scale-ends" aria-hidden="true">
+            <span>Lighter</span>
+            <span>Darker</span>
+          </span>
         </label>
         <label>
           Paper

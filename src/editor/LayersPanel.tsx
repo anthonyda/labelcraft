@@ -10,7 +10,7 @@ import {
   type KeyboardEvent,
   type PointerEvent,
 } from 'react'
-import { baseLayerName, layerNames } from '../model/layerNames'
+import { baseLayerName, layerNames, layerTitle } from '../model/layerNames'
 import type { LabelObject } from '../model/types'
 import { Icon, type IconName } from '../ui/icons'
 import { useEditorState, useEditorStore, useObjectsOutside } from './useEditor'
@@ -200,6 +200,7 @@ export function LayersPanel({
                 if (!(e.shiftKey || e.ctrlKey || e.metaKey)) onPicked?.()
               }}
               onDoubleClick={() => setRenaming(o.id)}
+              title={layerTitle(o)}
             >
               <Icon name={TYPE_ICONS[o.type]} />
               {renaming === o.id ? (

@@ -54,7 +54,7 @@ export const connectEmulator = async (page: Page) => {
   const dialog = page.getByRole('dialog', { name: 'Printer' })
   await dialog.getByLabel(/Emulated D110_M/).check()
   await dialog.getByRole('button', { name: 'Connect' }).click()
-  await expect(dialog.getByText('Connected to')).toBeVisible()
+  await expect(dialog.getByTestId('connected-printer')).toBeVisible()
   await dialog.getByRole('button', { name: 'Done' }).click()
   await expect(dialog).toBeHidden()
 }

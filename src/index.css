@@ -961,3 +961,178 @@ button.icon-only {
   width: 14rem;
   max-width: 100%;
 }
+
+/* Desktop toolbar: grouped segments (R24.AC6, mockup S3) — the buttons of
+   one group share one outline, with dividers between them. */
+.desktop .toolbar .group {
+  gap: 0;
+}
+
+.desktop .toolbar .group > .row-label {
+  margin-inline-end: 0.25rem;
+}
+
+.desktop .toolbar .group > :is(button, input:not([hidden])) {
+  position: relative;
+  border-radius: 0;
+  margin-inline-start: -1px;
+}
+
+.desktop .toolbar .group > :is(button, input:not([hidden])):hover,
+.desktop .toolbar .group > :is(button, input:not([hidden])):focus-visible {
+  z-index: 1;
+}
+
+.desktop .toolbar .group > .row-label + :is(button, input),
+.desktop .toolbar .group > :is(button, input):first-child {
+  margin-inline-start: 0;
+  border-start-start-radius: 0.375rem;
+  border-end-start-radius: 0.375rem;
+}
+
+.desktop
+  .toolbar
+  .group
+  > :is(button, input:not([hidden])):not(
+    :has(~ button, ~ input:not([hidden]))
+  ) {
+  border-start-end-radius: 0.375rem;
+  border-end-end-radius: 0.375rem;
+}
+
+/* R24.AC1: one size line under the Size dropdown; frame tiles, 3 per row */
+.field-hint {
+  margin: -0.25rem 0 0.75rem;
+  font-size: 0.8125rem;
+  opacity: 0.7;
+}
+
+.frame-designs {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.frame-designs button {
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.15rem;
+  min-height: 56px;
+  padding: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1.1;
+  text-align: center;
+}
+
+/* R24.AC3: print dialog */
+.print-size {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+}
+
+.copies {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.stepper input {
+  width: 4rem;
+  min-height: 44px;
+  text-align: center;
+  font: inherit;
+}
+
+.scale-ends {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+/* R24.AC4: phone header on one line; About in the Labels panel */
+.phone .app-header {
+  flex-wrap: nowrap;
+}
+
+.phone .brand-name,
+.phone .header-actions .btn-text,
+.phone .header-actions .badge,
+.phone .autosave {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.phone .file-name {
+  flex: 1;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.phone .header-actions {
+  flex-wrap: nowrap;
+  margin-left: auto;
+}
+
+.about {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+
+.about h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.875rem;
+}
+
+.about p {
+  margin: 0;
+  opacity: 0.8;
+}
+
+/* R24.AC5: resizable layers panel */
+.desktop .layers {
+  position: relative;
+}
+
+.layers-resize {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 1;
+}
+
+.layers-resize:hover,
+.layers-resize:focus-visible {
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+  outline: none;
+}
+
+/* R24.AC4: on phones the status line floats over the bottom of the canvas,
+   so showing or hiding it never moves the label (e.g. mid-drag). */
+.phone .status-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  background: Canvas;
+  border-top: 1px solid var(--border);
+  pointer-events: none;
+}
+
+.phone .status-line.idle {
+  visibility: hidden;
+}

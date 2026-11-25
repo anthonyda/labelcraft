@@ -30,6 +30,24 @@ export const baseLayerName = (o: LabelObject): string => {
   return name ? clip(name) : TYPE_NAMES[o.type]
 }
 
+/** Full, unclipped name for a tooltip (R24.AC5). */
+export const layerTitle = (o: LabelObject): string => {
+  const own = o.name?.trim()
+  if (own) return own
+  if (o.type === 'text') {
+    return (
+      o.text
+        .split('\n')
+        .find((l) => l.trim())
+        ?.trim() || TYPE_NAMES.text
+    )
+  }
+  if (o.type === 'qr' || o.type === 'barcode') {
+    return o.content.trim() || TYPE_NAMES[o.type]
+  }
+  return TYPE_NAMES[o.type]
+}
+
 /** The user's name for an object, if it has one (R21.AC10). */
 export const customName = (o: LabelObject): string | undefined =>
   o.name?.trim() ? clip(o.name.trim()) : undefined

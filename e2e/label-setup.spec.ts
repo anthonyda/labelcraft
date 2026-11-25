@@ -106,8 +106,11 @@ test('the detected model replaces the chosen one', async ({ page }) => {
   await expect(
     dialog.getByRole('status').filter({ hasText: 'Detected' }),
   ).toHaveText('Detected D110_M; it replaces the B21 you had chosen.')
-  await expect(dialog.getByLabel('Printer model')).toHaveValue('D110_M')
-  await expect(dialog.getByLabel('Printer model')).toBeDisabled()
+  // R24.AC2: a detected model is shown as text.
+  await expect(dialog.getByTestId('printer-model')).toHaveText(
+    'Model: D110_M (detected)',
+  )
+  await expect(dialog.getByLabel('Printer model')).toHaveCount(0)
   await dialog.getByRole('button', { name: 'Done' }).click()
 
   await labelGroup(page)

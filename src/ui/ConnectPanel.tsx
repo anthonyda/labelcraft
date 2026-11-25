@@ -37,13 +37,21 @@ function ModelPicker() {
   const state = usePrinter()
   const detected = state.model
   const id = 'printer-model'
+  // R24.AC2: a detected model is shown as text, not a disabled dropdown.
+  if (detected) {
+    return (
+      <p className="status" data-testid="printer-model">
+        Model: <strong>{detected.model}</strong> (detected)
+      </p>
+    )
+  }
   return (
     <div className="field">
       <label htmlFor={id}>Printer model</label>
       <select
         id={id}
-        value={detected?.model ?? state.chosen?.model ?? ''}
-        disabled={!!detected || state.status === 'printing'}
+        value={state.chosen?.model ?? ''}
+        disabled={state.status === 'printing'}
         onChange={(e) =>
           printerService.setChosenModel(e.target.value || undefined)
         }
@@ -54,7 +62,6 @@ function ModelPicker() {
             {models.map((m) => (
               <option key={m} value={m}>
                 {m}
-                {detected?.model === m ? ' (detected)' : ''}
               </option>
             ))}
           </optgroup>
@@ -142,16 +149,17 @@ export function ConnectPanel() {
         {state.status === 'connecting' && 'Connecting…'}
         {connected && (
           <>
-            Connected to <strong>{state.deviceName}</strong>
+            Connected:{' '}
+            <strong data-testid="connected-printer">
+              {state.model?.model ?? state.deviceName}
+            </strong>
             {state.transport === 'emulator' && (
               <span className="badge">Emulated</span>
             )}
-            {' · '}
-            {state.model
-              ? state.model.model
-              : state.chosen
-                ? `model not recognised, using ${state.chosen.model}`
-                : 'unknown model'}
+            {!state.model &&
+              (state.chosen
+                ? ` · model not recognised, using ${state.chosen.model}`
+                : ' · model not recognised')}
           </>
         )}
       </p>

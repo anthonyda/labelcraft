@@ -132,8 +132,8 @@ function LabelSetupFields() {
           />
         </>
       ) : (
-        <p className="status" data-testid="label-dimensions">
-          {mm(doc.label.widthMm)} × {mm(doc.label.heightMm)} mm
+        <p className="field-hint" data-testid="label-dimensions">
+          label {mm(doc.label.widthMm)} × {mm(doc.label.heightMm)} mm
         </p>
       )}
       <SelectField

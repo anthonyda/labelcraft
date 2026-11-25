@@ -56,7 +56,7 @@ function PrinterButton({ onClick }: { onClick: () => void }) {
   return (
     <button type="button" className="printer-button" onClick={onClick}>
       <Icon name="plug" />
-      Printer: {text}
+      <span className="btn-text">Printer: {text}</span>
       {model?.source === 'chosen' && printer.status !== 'connecting' && (
         <span className="badge chosen">
           {connected ? 'chosen' : 'chosen, not connected'}
@@ -107,7 +107,7 @@ export default function App() {
               className="primary"
               onClick={() => setPrintOpen(true)}
             >
-              Print…
+              <span className="btn-text">Print…</span>
             </Button>
           </>
         }

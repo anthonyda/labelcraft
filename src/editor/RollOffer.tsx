@@ -19,7 +19,11 @@ export function RollOffer() {
   return (
     <div className="roll-offer">
       <p>The printer has {name} labels loaded.</p>
-      <Button icon="roll" onClick={() => store.setLabel(target)}>
+      <Button
+        icon="roll"
+        className="primary"
+        onClick={() => store.setLabel(target)}
+      >
         Use loaded roll ({name})
       </Button>
     </div>

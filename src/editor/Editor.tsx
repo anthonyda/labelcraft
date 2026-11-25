@@ -15,6 +15,11 @@ import { EditorCanvas } from './EditorCanvas'
 import { FileMenu, FileStatus } from './FileMenu'
 import { LayersPanel } from './LayersPanel'
 import { Notices } from './Notices'
+import {
+  LAYERS_MAX_REM,
+  LAYERS_MIN_REM,
+  useLayersWidth,
+} from './useLayersWidth'
 import { imageObjectFromFile, isImageFile } from './images'
 import { PropertiesPanel } from './PropertiesPanel'
 import { commandForKey, isTypingTarget, type Command } from './shortcuts'
@@ -53,8 +58,11 @@ function StatusLine() {
   const selected = doc.objects.filter((o) => selection.includes(o.id))
   const one = selected.length === 1 ? selected[0] : undefined
   const outside = useObjectsOutside(doc).length
+  // R24.AC4: on phones the status line only shows while something is
+  // selected (or outside the label).
+  const idle = selection.length === 0 && outside === 0
   return (
-    <div className="status-line">
+    <div className={idle ? 'status-line idle' : 'status-line'}>
       <span id="editor-title" className="label-size">
         {doc.label.widthMm} × {doc.label.heightMm} mm ·{' '}
         {fmt(pxToMm(1, doc.label.dpi) * 1000)} µm per dot
@@ -107,6 +115,7 @@ export function Editor({
   }
   const phone = useMediaQuery(PHONE_QUERY)
   const [panel, setPanel] = useState<Panel>()
+  const [layersRem, setLayersRem] = useLayersWidth()
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -144,7 +153,7 @@ export function Editor({
       <header className="app-header">
         <h1 className="brand">
           <Logo />
-          labelcraft
+          <span className="brand-name">labelcraft</span>
         </h1>
         <FileStatus autosave={autosave} />
         <div className="header-actions">{headerActions}</div>
@@ -164,9 +173,14 @@ export function Editor({
 
       <div className="workspace">
         {!phone && (
-          <aside className="layers" aria-labelledby="layers-title">
+          <aside
+            className="layers"
+            aria-labelledby="layers-title"
+            style={{ width: `${layersRem}rem` }}
+          >
             <h2 id="layers-title">Layers</h2>
             <LayersPanel />
+            <LayersResizer rem={layersRem} setRem={setLayersRem} />
           </aside>
         )}
         <div className="editor-main">
@@ -190,6 +204,13 @@ export function Editor({
             onClose={() => setPanel(undefined)}
           >
             <FileMenu />
+            {/* R24.AC4: the footer's notice lives here on phones. */}
+            <section className="about" aria-labelledby="about-title">
+              <h3 id="about-title">About</h3>
+              <p>
+                <AboutText />
+              </p>
+            </section>
           </Sheet>
           <Sheet
             id="sheet-add"
@@ -243,16 +264,72 @@ export function Editor({
         </>
       )}
 
-      <p className="notice">
-        Independent project, not affiliated with or endorsed by NIIMBOT. ·{' '}
-        <a
-          className="build"
-          href={`https://github.com/anthonyda/labelcraft/commit/${__BUILD_COMMIT__}`}
-          data-testid="build-commit"
-        >
-          Build {__BUILD_COMMIT__.slice(0, 7)}
-        </a>
-      </p>
+      {!phone && (
+        <p className="notice">
+          <AboutText />
+        </p>
+      )}
     </div>
+  )
+}
+
+/** "Not affiliated" notice and build commit (footer, or About on phones). */
+function AboutText() {
+  return (
+    <>
+      Independent project, not affiliated with or endorsed by NIIMBOT. ·{' '}
+      <a
+        className="build"
+        href={`https://github.com/anthonyda/labelcraft/commit/${__BUILD_COMMIT__}`}
+        data-testid="build-commit"
+      >
+        Build {__BUILD_COMMIT__.slice(0, 7)}
+      </a>
+    </>
+  )
+}
+
+/** R24.AC5: drag (or arrow keys) to resize the layers panel. */
+function LayersResizer({
+  rem,
+  setRem,
+}: {
+  rem: number
+  setRem: (rem: number) => void
+}) {
+  const remPx = () =>
+    parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+  return (
+    <div
+      className="layers-resize"
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize layers panel"
+      aria-valuemin={LAYERS_MIN_REM}
+      aria-valuemax={LAYERS_MAX_REM}
+      aria-valuenow={rem}
+      tabIndex={0}
+      onPointerDown={(e) => {
+        e.preventDefault()
+        const el = e.currentTarget
+        el.setPointerCapture(e.pointerId)
+        const startX = e.clientX
+        const start = rem
+        const move = (ev: PointerEvent) =>
+          setRem(start + (ev.clientX - startX) / remPx())
+        const up = () => {
+          el.removeEventListener('pointermove', move)
+          el.removeEventListener('pointerup', up)
+        }
+        el.addEventListener('pointermove', move)
+        el.addEventListener('pointerup', up)
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'ArrowLeft') setRem(rem - 1)
+        else if (e.key === 'ArrowRight') setRem(rem + 1)
+        else return
+        e.preventDefault()
+      }}
+    />
   )
 }

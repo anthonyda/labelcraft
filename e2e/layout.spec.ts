@@ -250,7 +250,7 @@ test('every button has an icon before its text; logo in the header', async ({
   const printer = page.getByRole('dialog', { name: 'Printer' })
   await printer.getByLabel(/Emulated D110_M/).check()
   await printer.getByRole('button', { name: 'Connect' }).click()
-  await expect(printer.getByText('Connected to')).toBeVisible()
+  await expect(printer.getByTestId('connected-printer')).toBeVisible()
   expect(await buttonsWithoutIcon(page)).toEqual([])
   await printer.getByRole('button', { name: 'Done' }).click()
   await page.getByRole('button', { name: 'Print…' }).click()
