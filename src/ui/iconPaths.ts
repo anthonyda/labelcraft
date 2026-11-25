@@ -46,6 +46,7 @@ export const ICONS = {
   alignBottom: 'M3 20h18 M6 4h4v12H6z M14 9h4v7h-4z',
   zoomIn: 'M11 4a7 7 0 1 0 0 14a7 7 0 0 0 0-14z M20 20l-4-4 M8 11h6 M11 8v6',
   zoomOut: 'M11 4a7 7 0 1 0 0 14a7 7 0 0 0 0-14z M20 20l-4-4 M8 11h6',
+  actualSize: 'M5 9l2-2v11 M16 9l2-2v11 M11.5 10h.01 M11.5 15h.01',
   fit: 'M4 9V4h5 M15 4h5v5 M20 15v5h-5 M9 20H4v-5',
   // Phone panels
   labels:

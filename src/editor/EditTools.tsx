@@ -80,6 +80,14 @@ export function EditTools({
           <Button icon="fit" onClick={() => setZoom('fit')}>
             Fit
           </Button>
+          {/* R4.AC8: 100%, the label's real size. */}
+          <Button
+            icon="actualSize"
+            onClick={() => setZoom(1)}
+            title="Show the label at its real size (100%)"
+          >
+            Actual size
+          </Button>
         </div>
       </div>
       <div className="group" role="group" aria-label="Arrange">

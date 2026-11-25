@@ -164,6 +164,11 @@ test('zoom is real size, with steps, typed values and Fit', async ({
   await page.getByRole('button', { name: 'Fit' }).click()
   await expect(level).toHaveValue(fitText)
   expect(await scale()).toBeCloseTo(fit, 5)
+
+  // Actual size = 100%, the label's real size.
+  await page.getByRole('button', { name: 'Actual size' }).click()
+  await expect(level).toHaveValue('100%')
+  expect(Math.round(240 * (await scale()))).toBe(113)
 })
 
 // R4.AC8: Ctrl + mouse wheel zooms smoothly.
