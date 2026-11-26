@@ -63,7 +63,7 @@ test('portrait turns the label and its design; prints matching the preview', asy
 // R23
 test('pick a frame; it shows in the preview and prints', async ({ page }) => {
   const label = await labelGroup(page)
-  const frames = label.getByRole('group', { name: 'Frame' })
+  const frames = label.getByRole('group', { name: 'Frame', exact: true })
   await expect(frames.getByRole('button', { name: 'None' })).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -84,6 +84,42 @@ test('pick a frame; it shows in the preview and prints', async ({ page }) => {
       return d[0]
     })
   expect(edgeInk).toBe(0)
+  await expect(
+    dialog.getByText('Matches the preview pixel for pixel.'),
+  ).toBeVisible()
+})
+
+// R23.AC1: categories; a decorative frame prints matching the preview.
+test('frame categories; a decorative frame prints', async ({ page }) => {
+  const label = await labelGroup(page)
+  const chips = label.getByRole('group', { name: 'Frame categories' })
+  const frames = label.getByRole('group', { name: 'Frame', exact: true })
+  await expect(chips.getByRole('button')).toHaveText([
+    'Basic',
+    'Lines',
+    'Corners',
+    'Shapes',
+    'Decorative',
+  ])
+  await expect(chips.getByRole('button', { name: 'Basic' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await chips.getByRole('button', { name: 'Decorative' }).click()
+  await expect(frames.getByRole('button')).toHaveText([
+    'Wavy',
+    'Zigzag',
+    'Scalloped',
+    'Stamp',
+    'Beads',
+    'Diamonds',
+  ])
+  await frames.getByRole('button', { name: 'Stamp' }).click()
+  await expect(frames.getByRole('button', { name: 'Stamp' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  const dialog = await printToEmulator(page)
   await expect(
     dialog.getByText('Matches the preview pixel for pixel.'),
   ).toBeVisible()

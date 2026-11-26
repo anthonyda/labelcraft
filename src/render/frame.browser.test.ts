@@ -46,7 +46,19 @@ describe('label frames', () => {
     // Inset 4 dots + up to 3 lines of 2 dots; ticket notches reach 2 mm (16 dots) in.
     const { n, inner } = inkBox(
       c,
-      design === 'ticket' ? 4 + 16 + 3 : 4 + 3 * 3 + 2,
+      // How far in from the edge each design may reach, in dots (inset 4).
+      (
+        {
+          ticket: 4 + 16 + 3,
+          thickThin: 4 + 5 * 2 + 2,
+          cornersRound: 4 + 32 + 3,
+          cornerDots: 4 + 13 + 2,
+          tag: 4 + 40,
+          banner: 4 + 32 + 3,
+          pill: 4 + 15,
+          stitched: 4 + 8 + 3,
+        } as Record<string, number>
+      )[design] ?? 4 + 3 * 3 + 2,
     )
     expect(n).toBeGreaterThan(50)
     expect(inner).toBe(0)
@@ -72,5 +84,21 @@ describe('label frames', () => {
     const { canvas } = await renderLabel(doc)
     const d = canvas.getContext('2d')!.getImageData(10, 48, 1, 1).data
     expect(d[0]).toBe(0) // thick line at x = 4..11
+  })
+})
+
+// R23.AC1: every catalogue design has a renderer and draws something.
+describe('frame catalogue', () => {
+  it('has five categories and draws every design', async () => {
+    const { FRAMES, FRAME_CATEGORIES } = await import('../model/frames')
+    expect(FRAME_CATEGORIES).toHaveLength(5)
+    expect(FRAMES).toHaveLength(26)
+    for (const f of FRAMES.filter((f) => f.design !== 'none')) {
+      const c = renderFrame(label(frameFor(f.design)))!
+      const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data
+      let ink = 0
+      for (let i = 3; i < d.length; i += 4) if (d[i]) ink++
+      expect(ink, f.design).toBeGreaterThan(100)
+    }
   })
 })

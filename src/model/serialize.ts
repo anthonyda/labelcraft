@@ -1,3 +1,4 @@
+import { FRAME_IDS } from './frames'
 import {
   DOC_VERSION,
   OBJECT_TYPES,
@@ -10,24 +11,12 @@ export const toJson = (doc: LabelDoc): string => JSON.stringify(doc, null, 2)
 const isFiniteNumber = (v: unknown): v is number =>
   typeof v === 'number' && Number.isFinite(v)
 
-const FRAME_DESIGNS = [
-  'none',
-  'line',
-  'thick',
-  'double',
-  'rounded',
-  'dashed',
-  'dotted',
-  'corners',
-  'ticket',
-]
-
 const isFrame = (v: unknown): boolean => {
   const f = v as Record<string, unknown> | null
   return (
     typeof f === 'object' &&
     f !== null &&
-    FRAME_DESIGNS.includes(f.design as string) &&
+    (FRAME_IDS as readonly string[]).includes(f.design as string) &&
     isFiniteNumber(f.thicknessMm) &&
     isFiniteNumber(f.insetMm)
   )

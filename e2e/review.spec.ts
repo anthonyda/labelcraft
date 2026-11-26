@@ -18,7 +18,9 @@ test('label size shown once; frames as a 3-column grid', async ({ page }) => {
   await expect(label.getByTestId('label-dimensions')).toHaveText(
     'label 30 × 12 mm',
   )
-  const tiles = label.getByRole('group', { name: 'Frame' }).getByRole('button')
+  const tiles = label
+    .getByRole('group', { name: 'Frame', exact: true })
+    .getByRole('button')
   const ys = await tiles.evaluateAll((bs) =>
     bs.map((b) => Math.round(b.getBoundingClientRect().top)),
   )
