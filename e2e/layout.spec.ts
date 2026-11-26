@@ -35,6 +35,7 @@ const PANEL_CONTENT: Record<PanelName, string[]> = {
     'Zoom in',
     'Fit',
     'Calibrate…',
+    'Magnet',
   ],
   Properties: [],
 }

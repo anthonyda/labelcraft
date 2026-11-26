@@ -5,12 +5,14 @@
  */
 import type Konva from 'konva'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Image, Layer, Rect, Stage, Transformer } from 'react-konva'
+import { Image, Layer, Line, Rect, Stage, Transformer } from 'react-konva'
 import { boundingBox } from '../model/ops'
 import type { LabelObject, TextObject } from '../model/types'
 import { labelSizePx, mmToPx, ptToPx, pxToMm } from '../model/units'
 import { renderFrame } from '../render/frame'
 import { inkOutsideBox } from '../render/inkBounds'
+import { snapBox } from './snap'
+import { useMagnet } from './useMagnet'
 import { objectPixelBox } from '../render/renderObject'
 import { useScreenScale } from '../ui/calibration'
 import { COARSE_POINTER_QUERY, useMediaQuery } from '../ui/useMediaQuery'
@@ -25,6 +27,9 @@ import { clampZoom, scaleToZoom, zoomToScale, type Zoom } from './zoom'
 
 /** Minimum screen px around the label. */
 export const CANVAS_PADDING = 16
+
+/** Magnet guide lines (R26.AC2). */
+const SNAP_COLOR = '#ff7a45'
 
 /** Outline of objects that go past the label edge (R19.AC1). */
 const OUTSIDE_COLOR = '#dc2626'
@@ -41,6 +46,7 @@ function ObjectNode({
   onEdit,
   outside,
   labelPx,
+  onSnap,
 }: {
   o: LabelObject
   dpi: number
@@ -48,6 +54,8 @@ function ObjectNode({
   /** R19.AC1: the object goes past the label edge. */
   outside: boolean
   labelPx: { width: number; height: number }
+  /** R26: snap the node while it is dragged. */
+  onSnap: (e: Konva.KonvaEventObject<DragEvent>) => void
   onPointerDown: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void
   onDragEnd: () => void
   onTransformEnd: () => void
@@ -85,7 +93,10 @@ function ObjectNode({
       draggable
       onMouseDown={onPointerDown}
       onTouchStart={onPointerDown}
-      onDragMove={liveCheck}
+      onDragMove={(e) => {
+        onSnap(e)
+        liveCheck(e)
+      }}
       onTransform={liveCheck}
       onDragEnd={onDragEnd}
       onTransformEnd={onTransformEnd}
@@ -368,6 +379,39 @@ export function EditorCanvas({
     tr.getLayer()?.batchDraw()
   }, [selection, doc, editingId])
 
+  // R26: magnet. Snap the dragged object to the label's and other objects'
+  // edges and centres, and show what it snapped to.
+  const magnet = useMagnet()
+  const [guides, setGuides] = useState<{ x: number[]; y: number[] }>()
+  const snapDrag = (e: Konva.KonvaEventObject<DragEvent>) => {
+    const node = e.target
+    const layer = node.getLayer()
+    const stage = stageRef.current
+    const alt = !!e.evt && 'altKey' in e.evt && e.evt.altKey
+    if (!magnet || alt || !layer || !stage || store.selection.length > 1) {
+      if (guides) setGuides(undefined)
+      return
+    }
+    const rectOf = (n: Konva.Node) =>
+      n.getClientRect({ relativeTo: layer, skipStroke: true, skipShadow: true })
+    const others = stage
+      .find('.object')
+      .filter((n) => n !== node)
+      .map(rectOf)
+    const r = snapBox(rectOf(node), label, others, 6 / scale)
+    if (r.dx || r.dy) node.position({ x: node.x() + r.dx, y: node.y() + r.dy })
+    const next = { x: r.guidesX, y: r.guidesY }
+    const same =
+      guides &&
+      guides.x.join() === next.x.join() &&
+      guides.y.join() === next.y.join()
+    if (next.x.length || next.y.length) {
+      if (!same) setGuides(next)
+    } else if (guides) {
+      setGuides(undefined)
+    }
+  }
+
   /** Write the current node geometry of the selection back to the model. */
   const commitSelection = () => {
     const stage = stageRef.current
@@ -507,9 +551,13 @@ export function EditorCanvas({
               dpi={dpi}
               outside={outside.includes(o.id)}
               labelPx={label}
+              onSnap={snapDrag}
               hidden={o.id === editingId}
               onPointerDown={onObjectDown(o.id)}
-              onDragEnd={commitOnce}
+              onDragEnd={() => {
+                setGuides(undefined)
+                commitOnce()
+              }}
               onTransformEnd={commitOnce}
               onEdit={() => {
                 if (o.type !== 'text') return
@@ -535,6 +583,29 @@ export function EditorCanvas({
               listening={false}
             />
           )}
+          {/* R26.AC2: what the dragged object snapped to. */}
+          {guides?.x.map((x) => (
+            <Line
+              key={`gx${x}`}
+              name="snap-guide"
+              points={[x, -origin.y / scale, x, (stageH - origin.y) / scale]}
+              stroke={SNAP_COLOR}
+              strokeWidth={1}
+              strokeScaleEnabled={false}
+              listening={false}
+            />
+          ))}
+          {guides?.y.map((y) => (
+            <Line
+              key={`gy${y}`}
+              name="snap-guide"
+              points={[-origin.x / scale, y, (stageW - origin.x) / scale, y]}
+              stroke={SNAP_COLOR}
+              strokeWidth={1}
+              strokeScaleEnabled={false}
+              listening={false}
+            />
+          ))}
           {/* R19.AC1: the label edge stays visible over objects. */}
           <Rect
             name="label-edge"

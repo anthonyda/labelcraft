@@ -507,3 +507,9 @@ dialog {
   border: 0;
   background: transparent;
 }
+
+/* Magnet switch (R26.AC3) */
+button.toggle-on {
+  background: var(--selection);
+  color: var(--selection-ink);
+}

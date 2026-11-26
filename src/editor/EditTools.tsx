@@ -1,5 +1,6 @@
 /** Editing tool groups shared by the desktop toolbar and the phone Edit sheet (T3.4). */
 import { useScreenScale } from '../ui/calibration'
+import { setMagnet, useMagnet } from './useMagnet'
 import { CalibrateDialog } from '../ui/CalibrateDialog'
 import { Button, Icon, type IconName } from '../ui/icons'
 import { useEditorState, useEditorStore } from './useEditor'
@@ -29,6 +30,7 @@ export function EditTools({
   useEditorState() // re-render on changes
   const none = store.selection.length === 0
   const { calibrated } = useScreenScale()
+  const magnet = useMagnet()
   const [calibrating, setCalibrating] = useState(false)
   const button = (
     name: string,
@@ -68,6 +70,22 @@ export function EditTools({
             none,
             'destructive',
           )}
+        </div>
+        {/* R26.AC3: snapping on or off. */}
+        <div className="group" role="group" aria-label="Magnet">
+          <Button
+            icon="magnet"
+            aria-pressed={magnet}
+            className={magnet ? 'toggle-on' : undefined}
+            title={
+              magnet
+                ? 'Magnet on: objects snap to edges and centres (hold Alt to move freely)'
+                : 'Magnet off: objects move freely'
+            }
+            onClick={() => setMagnet(!magnet)}
+          >
+            Magnet
+          </Button>
         </div>
         <div className="group" role="group" aria-label="Zoom">
           <button
