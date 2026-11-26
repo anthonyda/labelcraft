@@ -195,3 +195,14 @@ test('renames the label from the header', async ({ page }) => {
   await page.getByLabel('Label name').press('Escape')
   await expect(labelName(page)).toHaveText('Shelf C')
 })
+
+// R10.AC1: a change made just before the page goes away is kept.
+test('saves at once when the page is hidden', async ({ page }) => {
+  await addRect(page)
+  await expect(page.getByTestId('autosave')).toHaveText('Saving…')
+  // The app is closed before the usual short delay.
+  await page.evaluate(() => window.dispatchEvent(new Event('pagehide')))
+  await expect(page.getByTestId('autosave')).toHaveText('Kept in this browser')
+  await page.reload()
+  await expect(status(page)).toContainText('3 objects')
+})

@@ -154,6 +154,12 @@ export function PrintDialog({
       }
     } catch (e) {
       if (e instanceof PrintCancelledError) setMessage('Print cancelled.')
+      // R11.AC6: shown here when the service couldn't (e.g. link lost).
+      else if (!printerService.getState().error) {
+        setMessage(
+          `Print failed: ${e instanceof Error ? e.message : String(e)}`,
+        )
+      }
     }
   }
 

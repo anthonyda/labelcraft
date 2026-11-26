@@ -37,6 +37,8 @@ const cachedBitmap = (o: LabelObject, dpi: number): Promise<ObjectBitmap> => {
   if (!entry) {
     entry = renderObject(o, dpi)
     cache.set(key, entry)
+    // A failed render (e.g. an image that didn't load) is retried next time.
+    entry.catch(() => cache.delete(key))
     if (cache.size > CACHE_SIZE) cache.delete(cache.keys().next().value!)
   }
   return entry

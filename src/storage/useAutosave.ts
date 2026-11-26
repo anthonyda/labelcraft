@@ -54,14 +54,33 @@ export const useAutosave = (store: EditorStore): AutosaveStatus => {
           if (!changed) return
           clearTimeout(timer)
           setStatus('saving')
-          timer = setTimeout(save, AUTOSAVE_DELAY_MS)
+          timer = setTimeout(() => {
+            timer = undefined
+            save()
+          }, AUTOSAVE_DELAY_MS)
         })
       })
+
+    // R10.AC1: write a pending save at once when the page goes away
+    // (installed apps are often closed right after an edit).
+    const flush = () => {
+      if (timer === undefined || cancelled) return
+      clearTimeout(timer)
+      timer = undefined
+      save()
+    }
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') flush()
+    }
+    document.addEventListener('visibilitychange', onHide)
+    window.addEventListener('pagehide', flush)
 
     return () => {
       cancelled = true
       clearTimeout(timer)
       unsubscribe?.()
+      document.removeEventListener('visibilitychange', onHide)
+      window.removeEventListener('pagehide', flush)
     }
   }, [store])
 

@@ -1,5 +1,9 @@
-import { LabelType, type NiimbotAbstractClient } from '@mmote/niimbluelib'
-import { afterEach, describe, expect, it } from 'vitest'
+import {
+  ImageEncoder,
+  LabelType,
+  type NiimbotAbstractClient,
+} from '@mmote/niimbluelib'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { newDoc } from '../model/factory'
 import { renderLabel } from '../render/renderLabel'
 import { EmulatedD110MClient, type EmulatorOptions } from './emulator'
@@ -195,6 +199,17 @@ describe('printer service: model', () => {
     expect(service.getState().printTask).toBe('D110M_V4')
     await service.print(await label(), job)
     expect(service.getState().status).toBe('connected')
+  })
+  // R17.AC4: a chosen "top" printer gets the bitmap in its direction.
+  it("uses the chosen model's print direction", async () => {
+    const { service } = emulatedService({ modelId: 9999 })
+    await service.connect('emulator')
+    service.setChosenModel('B21')
+    const spy = vi.spyOn(ImageEncoder, 'encodeCanvas')
+    // The emulator doesn't speak the B21 protocol; only the encoding matters.
+    await service.print(await label(), job).catch(() => undefined)
+    expect(spy.mock.calls[0]?.[2]).toBe('top')
+    spy.mockRestore()
   })
 })
 

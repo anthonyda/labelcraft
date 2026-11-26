@@ -430,7 +430,8 @@ export class PrinterService {
     }
     const taskName = this.state.printTask ?? opts.printTask
     if (!taskName) throw new Error('Choose a print task for this printer.')
-    const printDirection = this.state.model?.printDirection ?? 'left'
+    // R17.AC4: the detected model, else the chosen one.
+    const printDirection = knownModel(this.state)?.meta.printDirection ?? 'left'
 
     let cancelled = false
     const cancelPromise = new Promise<never>((_, reject) => {
