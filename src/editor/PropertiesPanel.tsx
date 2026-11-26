@@ -286,8 +286,8 @@ function ObjectFields({ o }: { o: LabelObject }) {
               label="Black and white"
               value={o.mode}
               options={[
-                ['dither', 'Dithering (photos)'],
-                ['threshold', 'Threshold (logos, drawings)'],
+                ['dither', 'Dithering (shades of grey)'],
+                ['threshold', 'Threshold (sharp black and white)'],
               ]}
               onChange={(mode) => set({ mode })}
             />
@@ -301,6 +301,11 @@ function ObjectFields({ o }: { o: LabelObject }) {
                 digits={0}
                 onChange={(threshold) => set({ threshold }, 'threshold')}
               />
+            )}
+            {o.mode === 'threshold' && (
+              <p className="field-hint" data-testid="threshold-hint">
+                Lower prints lighter, higher prints darker (1–255, middle 128).
+              </p>
             )}
           </>
         )}

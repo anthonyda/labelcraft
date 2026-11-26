@@ -149,8 +149,16 @@ test('adds images from a file and from the clipboard', async ({ page }) => {
   await expect(status(page)).toContainText('19.2 × 9.6 mm')
 
   await openPanel(page, 'Properties')
-  await props(page).getByLabel('Black and white').selectOption('threshold')
+  // R6.AC2: new images start in threshold mode at 128, with a hint.
+  await expect(props(page).getByLabel('Black and white')).toHaveValue(
+    'threshold',
+  )
   await expect(props(page).getByLabel('Threshold')).toHaveValue('128')
+  await expect(props(page).getByTestId('threshold-hint')).toContainText(
+    'Lower prints lighter, higher prints darker',
+  )
+  await props(page).getByLabel('Black and white').selectOption('dither')
+  await expect(props(page).getByTestId('threshold-hint')).toHaveCount(0)
 
   await page.evaluate(async (b64) => {
     const bytes = Uint8Array.from(atob(b64), (ch) => ch.charCodeAt(0))

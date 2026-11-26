@@ -73,7 +73,14 @@ export const createObject = (
         lineHeight: 1.2,
       }
     case 'image':
-      return { ...box(15, 15), type, src: '', mode: 'dither', threshold: 128 }
+      // R6.AC2: threshold mode by default, at the middle of 1–255.
+      return {
+        ...box(15, 15),
+        type,
+        src: '',
+        mode: 'threshold',
+        threshold: 128,
+      }
     case 'rect':
     case 'ellipse':
       return { ...box(15, 10), type, strokeWidth: 0.5, filled: false }
