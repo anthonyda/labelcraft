@@ -360,6 +360,11 @@ export class PrinterService {
 
     try {
       const info = await client.connect()
+      // R2.AC7: cancelled (or replaced) while connecting: drop this one.
+      if (this.client !== client) {
+        await client.disconnect().catch(() => undefined)
+        return
+      }
       const detected = client.getModelMetadata()
       const chosen = this.state.chosen
       const patch: Partial<PrinterState> = {
@@ -381,13 +386,20 @@ export class PrinterService {
       this.set(patch)
       await this.readPaperInfoAnswer(client)
     } catch (e) {
-      this.client = undefined
       await client.disconnect().catch(() => undefined)
+      // R2.AC7: a cancelled connection reports nothing.
+      if (this.client !== client) return
+      this.client = undefined
       this.set(
         { status: 'disconnected', transport, error: errorMessage(e) },
         true,
       )
     }
+  }
+
+  /** R2.AC7: give up a connection that hangs (e.g. Bluetooth pairing). */
+  async cancelConnect(): Promise<void> {
+    if (this.state.status === 'connecting') await this.disconnect()
   }
 
   /** R2.AC4 */

@@ -254,14 +254,31 @@ export function ConnectPanel() {
           Disconnect
         </Button>
       ) : (
-        <Button
-          icon="plug"
-          className="primary"
-          onClick={() => printerService.connect(transport)}
-          disabled={busy}
-        >
-          Connect
-        </Button>
+        <>
+          {/* R2.AC7: a hanging connection can be given up. */}
+          {state.status === 'connecting' && (
+            <>
+              <p className="field-hint" data-testid="connecting-hint">
+                Pairing can take a few seconds. If nothing happens, press Cancel
+                and try again.
+              </p>
+              <Button
+                icon="close"
+                onClick={() => printerService.cancelConnect()}
+              >
+                Cancel
+              </Button>
+            </>
+          )}
+          <Button
+            icon="plug"
+            className="primary"
+            onClick={() => printerService.connect(transport)}
+            disabled={busy}
+          >
+            Connect
+          </Button>
+        </>
       )}
     </div>
   )

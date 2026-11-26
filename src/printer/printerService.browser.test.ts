@@ -337,3 +337,31 @@ describe('printer service: loaded roll', () => {
     })
   })
 })
+
+// R2.AC7: a connection that hangs (Bluetooth pairing) can be cancelled.
+describe('printer service: cancel connecting', () => {
+  it('returns to disconnected and ignores a late answer', async () => {
+    let finish: () => void = () => undefined
+    let closed = false
+    class Hanging extends EmulatedD110MClient {
+      override async connect() {
+        await new Promise<void>((r) => (finish = r))
+        return super.connect()
+      }
+      override async disconnect() {
+        closed = true
+        return super.disconnect()
+      }
+    }
+    service = new PrinterService(() => new Hanging({}), memorySettings())
+    const connecting = service.connect('bluetooth')
+    expect(service.getState().status).toBe('connecting')
+    await service.cancelConnect()
+    expect(service.getState().status).toBe('disconnected')
+    expect(service.getState().error).toBeUndefined()
+    finish()
+    await connecting
+    expect(service.getState().status).toBe('disconnected')
+    expect(closed).toBe(true)
+  })
+})

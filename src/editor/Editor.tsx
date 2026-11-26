@@ -4,6 +4,7 @@
  * tools live in a bottom bar whose panels open as bottom sheets (R15).
  */
 import { useEffect, useState, type ReactNode } from 'react'
+import { ReloadAppButton } from '../ui/InstallButton'
 import { pxToMm } from '../model/units'
 import type { AutosaveStatus } from '../storage/useAutosave'
 import { Icon, Logo, type IconName } from '../ui/icons'
@@ -294,6 +295,7 @@ function AboutText() {
       >
         Build {__BUILD_COMMIT__.slice(0, 7)}
       </a>
+      <ReloadAppButton />
     </>
   )
 }

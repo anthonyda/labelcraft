@@ -81,3 +81,25 @@ for (const width of [900, 1000, 1280]) {
     ).toBeVisible()
   })
 }
+
+// R30.AC5: Reload app only in the installed app.
+test('Reload app shows only when installed', async ({ page }) => {
+  if (isPhone(page)) await openPanel(page, 'Labels')
+  await expect(page.getByRole('button', { name: 'Reload app' })).toHaveCount(0)
+  await page.addInitScript(() =>
+    Object.defineProperty(navigator, 'standalone', { value: true }),
+  )
+  await page.reload()
+  await expect(status(page)).toContainText('2 objects')
+  if (isPhone(page)) await openPanel(page, 'Labels')
+  const reload = page
+    .getByRole('button', { name: 'Reload app' })
+    .filter({ visible: true })
+    .first()
+  await expect(reload).toBeVisible()
+  // The installed app hides Install app.
+  await expect(
+    page.getByRole('button', { name: 'Install app', exact: true }),
+  ).toHaveCount(0)
+  await Promise.all([page.waitForEvent('load'), reload.click()])
+})

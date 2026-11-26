@@ -64,3 +64,21 @@ export function InstallButton() {
     </>
   )
 }
+
+/** R30.AC5: the installed app has no browser reload or pull-to-refresh. */
+export function ReloadAppButton() {
+  const { standalone } = useInstall()
+  if (!standalone) return null
+  return (
+    <>
+      {' '}
+      <Button
+        icon="refresh"
+        className="reload-app"
+        onClick={() => window.location.reload()}
+      >
+        Reload app
+      </Button>
+    </>
+  )
+}
