@@ -453,3 +453,36 @@ dialog {
   background: var(--panel);
   color: var(--ink);
 }
+
+/* Toolbar rows: a clear label chip per row and a divider between rows. */
+.desktop .toolbar {
+  gap: 0;
+  padding-block: 0.25rem;
+}
+
+.desktop .toolbar > .group,
+.desktop .toolbar > .group-row {
+  align-self: stretch;
+  padding-block: 0.3rem;
+}
+
+.desktop .toolbar > :is(.group, .group-row):not(:first-child) {
+  border-top: 1px solid var(--border);
+}
+
+.desktop .toolbar .row-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 4.25rem;
+  min-height: 1.75rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--header);
+  color: var(--header-ink);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  opacity: 1;
+}
