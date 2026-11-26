@@ -21,26 +21,51 @@ export const newDoc = (label?: Partial<LabelSetup>): LabelDoc => ({
 })
 
 /** New object of the given type with sensible defaults, centred on the label. */
+/** Space kept between a new object and the label edge (R4.AC10). */
+export const NEW_OBJECT_MARGIN_MM = 1
+
+/** One typographic point in mm. */
+const PT_MM = 25.4 / 72
+
+const round2 = (n: number) => Math.round(n * 100) / 100
+
 export const createObject = (
   type: ObjectType,
   label: LabelSetup,
 ): LabelObject => {
-  const box = (width: number, height: number) => ({
-    id: newId(),
-    x: (label.widthMm - width) / 2,
-    y: (label.heightMm - height) / 2,
-    width,
-    height,
-    rotation: 0,
-  })
+  // R4.AC10: fit inside the label with a 1 mm margin, scaled down (keeping
+  // proportions) when the label is smaller, never up.
+  const availW = Math.max(1, label.widthMm - 2 * NEW_OBJECT_MARGIN_MM)
+  const availH = Math.max(1, label.heightMm - 2 * NEW_OBJECT_MARGIN_MM)
+  const box = (w: number, h: number) => {
+    const k = Math.min(1, availW / w, availH / h)
+    const width = round2(w * k)
+    const height = round2(h * k)
+    return {
+      id: newId(),
+      x: round2((label.widthMm - width) / 2),
+      y: round2((label.heightMm - height) / 2),
+      width,
+      height,
+      rotation: 0,
+    }
+  }
+  // Text: as wide as fits (up to 40 mm), font shrunk to its box's height.
+  const textBox = () => {
+    const b = box(Math.min(40, availW), 8)
+    const fontSize = Math.max(
+      4,
+      Math.min(14, Math.floor((b.height / 1.2 / PT_MM) * 2) / 2),
+    )
+    return { ...b, fontSize }
+  }
   switch (type) {
     case 'text':
       return {
-        ...box(Math.min(40, label.widthMm), 8),
+        ...textBox(),
         type,
         text: 'Text',
         fontFamily: 'Arial',
-        fontSize: 14,
         bold: false,
         italic: false,
         underline: false,

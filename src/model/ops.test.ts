@@ -13,7 +13,7 @@ import {
   turnLabel,
   updateObject,
 } from './ops'
-import type { LabelDoc, LabelObject } from './types'
+import { OBJECT_TYPES, type LabelDoc, type LabelObject } from './types'
 
 const rect = (id: string, x = 0, y = 0, w = 10, h = 10): LabelObject => ({
   ...(createObject('rect', newDoc().label) as LabelObject),
@@ -245,5 +245,50 @@ describe('moveObject', () => {
     const d = doc()
     expect(moveObject(d, 'b', 1)).toBe(d)
     expect(moveObject(d, 'x', 0)).toBe(d)
+  })
+})
+
+// R4.AC10: new objects fit inside the label.
+describe('createObject sizes', () => {
+  const inside = (o: LabelObject, w: number, h: number) =>
+    o.x >= 1 - 1e-9 &&
+    o.y >= 1 - 1e-9 &&
+    o.x + o.width <= w - 1 + 1e-9 &&
+    o.y + o.height <= h - 1 + 1e-9
+
+  it.each([
+    [30, 12],
+    [40, 12],
+    [22, 12],
+    [12, 40],
+    [50, 30],
+  ])('every type fits a %s × %s mm label with a 1 mm margin', (w, h) => {
+    const label = newDoc({ widthMm: w, heightMm: h }).label
+    for (const type of OBJECT_TYPES) {
+      const o = createObject(type, label)
+      expect(inside(o, w, h), `${type} on ${w}×${h}`).toBe(true)
+    }
+  })
+
+  it('keeps proportions and never grows', () => {
+    const big = newDoc({ widthMm: 100, heightMm: 100 }).label
+    const qr = createObject('qr', big)
+    expect([qr.width, qr.height]).toEqual([15, 15])
+    const small = newDoc({ widthMm: 30, heightMm: 12 }).label
+    const qr2 = createObject('qr', small)
+    expect(qr2.width).toBe(qr2.height)
+    expect(qr2.height).toBe(10)
+    const bc = createObject('barcode', small)
+    expect(bc.width / bc.height).toBeCloseTo(35 / 12, 1)
+  })
+
+  it('shrinks a new text with its box', () => {
+    const tiny = newDoc({ widthMm: 20, heightMm: 5 }).label
+    const t = createObject('text', tiny) as Extract<
+      LabelObject,
+      { type: 'text' }
+    >
+    expect(t.height).toBe(3)
+    expect(t.fontSize * (25.4 / 72) * 1.2).toBeLessThanOrEqual(t.height + 1e-9)
   })
 })

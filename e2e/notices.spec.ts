@@ -49,3 +49,15 @@ test('says why a barcode grew back', async ({ page }) => {
   await notice.getByRole('button', { name: 'Dismiss' }).click()
   await expect(notice).toHaveCount(0)
 })
+
+// R4.AC10: inserting objects never puts them outside the label.
+test('new objects fit inside a small label', async ({ page }) => {
+  for (const name of ['QR code', 'Barcode', 'Rectangle', 'Text', 'Line']) {
+    await openPanel(page, 'Add')
+    await page.getByRole('button', { name, exact: true }).click()
+  }
+  await expect(status(page)).toContainText('7 objects')
+  await page.waitForTimeout(500)
+  await expect(page.getByTestId('outside-banner')).toHaveCount(0)
+  await expect(page.getByTestId('editor-notice')).toHaveCount(0)
+})
