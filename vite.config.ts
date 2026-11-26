@@ -19,6 +19,11 @@ export default defineConfig({
   base: './',
   plugins: [react()],
   define: { __BUILD_COMMIT__: JSON.stringify(commit) },
+  // R31.AC2: font files stay separate so they load only when a label uses
+  // them (small ones would otherwise be inlined into the CSS).
+  build: {
+    assetsInlineLimit: (file) => (/\.woff2?$/.test(file) ? false : undefined),
+  },
   // Pre-bundle so browser tests don't trigger a mid-run reload.
   optimizeDeps: {
     include: [
