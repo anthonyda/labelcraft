@@ -2,14 +2,110 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      labelcraft — free label designer for NIIMBOT printers, in your browser
+    </title>
+    <meta
+      name="description"
+      content="Design labels with text, QR codes, barcodes, images and 67 frames, then print them straight from your browser to NIIMBOT label printers (D110, D11, B1, B21 and more) over Bluetooth or USB. Free, no install, no account."
+    />
+    <meta
+      name="keywords"
+      content="label designer, label maker, NIIMBOT, D110, D11, B1, B21, thermal label printer, Web Bluetooth, QR code label, barcode label, free label software"
+    />
+    <link rel="canonical" href="https://anthonyda.github.io/labelcraft/" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0057ff" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/icon.svg" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>labelcraft</title>
+
+    <!-- Sharing previews (R27.AC2) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="labelcraft" />
+    <meta
+      property="og:title"
+      content="labelcraft — label designer for NIIMBOT printers"
+    />
+    <meta
+      property="og:description"
+      content="Design labels in your browser and print them to NIIMBOT printers over Bluetooth or USB. Free, no install."
+    />
+    <meta property="og:url" content="https://anthonyda.github.io/labelcraft/" />
+    <meta
+      property="og:image"
+      content="https://anthonyda.github.io/labelcraft/og-image.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="labelcraft: design labels in your browser and print to NIIMBOT printers"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="labelcraft — label designer for NIIMBOT printers"
+    />
+    <meta
+      name="twitter:description"
+      content="Design labels in your browser and print them to NIIMBOT printers over Bluetooth or USB. Free, no install."
+    />
+    <meta
+      name="twitter:image"
+      content="https://anthonyda.github.io/labelcraft/og-image.png"
+    />
+
+    <!-- Structured data (R27.AC3) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "labelcraft",
+        "url": "https://anthonyda.github.io/labelcraft/",
+        "description": "Free browser-based label designer that prints to NIIMBOT label printers over Web Bluetooth or Web Serial.",
+        "applicationCategory": "DesignApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Printing needs Chrome, Edge or Opera with Web Bluetooth or Web Serial; the editor works in any modern browser.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+        "isAccessibleForFree": true,
+        "license": "https://opensource.org/licenses/MIT",
+        "featureList": [
+          "Free placement of text, shapes, QR codes, barcodes and images",
+          "Official NIIMBOT label sizes and custom sizes",
+          "67 label frames, from simple lines to cats and flowers",
+          "Print preview that matches the printed label dot for dot",
+          "Works on desktop and Android phones",
+          "Light and dark themes"
+        ]
+      }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Shown until the app starts, and without JavaScript (R27.AC4). -->
+      <main class="seo-fallback">
+        <h1>labelcraft</h1>
+        <p>
+          A free label designer that runs in your browser and prints to NIIMBOT
+          label printers (D110, D11, B1, B21 and more) over Bluetooth or a USB
+          cable. Place text, shapes, QR codes, barcodes and images anywhere on
+          the label, pick an official label size, add one of 67 frames, and
+          print. No install, no account.
+        </p>
+        <p>
+          Printing needs Chrome, Edge or Opera on a computer, or Chrome on
+          Android. labelcraft needs JavaScript to run.
+        </p>
+        <p>
+          <small
+            >Independent project, not affiliated with or endorsed by
+            NIIMBOT.</small
+          >
+        </p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

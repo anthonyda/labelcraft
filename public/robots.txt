@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://anthonyda.github.io/labelcraft/sitemap.xml
