@@ -17,6 +17,7 @@ import {
   type Transport,
 } from '../printer/capabilities'
 import { printerService, usePrinter } from '../printer/usePrinter'
+import { connectHint } from './connectHint'
 import { rollMessage } from './rollMessage'
 
 /** Library models grouped by size family (R17.AC2). */
@@ -236,6 +237,13 @@ export function ConnectPanel() {
           Couldn't connect: {state.error}
         </p>
       )}
+      {state.status === 'disconnected' &&
+        state.error &&
+        connectHint(state.error, state.transport) && (
+          <p className="field-hint" data-testid="connect-hint">
+            {connectHint(state.error, state.transport)}
+          </p>
+        )}
 
       {connected ? (
         <Button
