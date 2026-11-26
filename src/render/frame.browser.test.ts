@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { newDoc } from '../model/factory'
 import type { FrameDesign, LabelSetup } from '../model/types'
+import { FRAMES } from '../model/frames'
 import { FRAME_DESIGNS, frameFor, renderFrame } from './frame'
+
+const FANCY = new Set(
+  FRAMES.filter((f) => f.category === 'fancy').map((f) => f.design),
+)
 import { renderLabel } from './renderLabel'
 
 const label = (frame?: LabelSetup['frame']): LabelSetup => ({
@@ -71,7 +76,9 @@ describe('label frames', () => {
           checker: 4 + 16 + 2,
           sawtooth: 4 + 10 + 2,
         } as Record<string, number>
-      )[design] ?? 4 + 3 * 3 + 2,
+      )[design] ??
+        // Fancy motifs sit up to ~9 mm in from the edge.
+        (FANCY.has(design as FrameDesign) ? 4 + 90 : 4 + 3 * 3 + 2),
     )
     expect(n).toBeGreaterThan(50)
     expect(inner).toBe(0)
@@ -104,8 +111,8 @@ describe('label frames', () => {
 describe('frame catalogue', () => {
   it('has five categories and draws every design', async () => {
     const { FRAMES, FRAME_CATEGORIES } = await import('../model/frames')
-    expect(FRAME_CATEGORIES).toHaveLength(5)
-    expect(FRAMES).toHaveLength(44)
+    expect(FRAME_CATEGORIES).toHaveLength(6)
+    expect(FRAMES).toHaveLength(67)
     for (const f of FRAMES.filter((f) => f.design !== 'none')) {
       const c = renderFrame(label(frameFor(f.design)))!
       const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data

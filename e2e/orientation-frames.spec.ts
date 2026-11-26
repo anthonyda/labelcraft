@@ -100,6 +100,7 @@ test('frame categories; a decorative frame prints', async ({ page }) => {
     'Corners',
     'Shapes',
     'Decorative',
+    'Fancy',
   ])
   await expect(chips.getByRole('button', { name: 'Basic' })).toHaveAttribute(
     'aria-pressed',

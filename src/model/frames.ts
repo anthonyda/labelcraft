@@ -2,7 +2,7 @@
 import type { FrameDesign, LabelFrame } from './types'
 
 export type FrameCategory =
-  'basic' | 'lines' | 'corners' | 'shapes' | 'decorative'
+  'basic' | 'lines' | 'corners' | 'shapes' | 'decorative' | 'fancy'
 
 export const FRAME_CATEGORIES: { id: FrameCategory; name: string }[] = [
   { id: 'basic', name: 'Basic' },
@@ -10,6 +10,7 @@ export const FRAME_CATEGORIES: { id: FrameCategory; name: string }[] = [
   { id: 'corners', name: 'Corners' },
   { id: 'shapes', name: 'Shapes' },
   { id: 'decorative', name: 'Decorative' },
+  { id: 'fancy', name: 'Fancy' },
 ]
 
 export type FrameInfo = {
@@ -180,6 +181,79 @@ export const FRAMES: FrameInfo[] = [
     category: 'decorative',
     thicknessMm: 0.4,
   },
+  { design: 'catEars', name: 'Cat ears', category: 'fancy', thicknessMm: 0.3 },
+  {
+    design: 'pawPrints',
+    name: 'Paw prints',
+    category: 'fancy',
+    thicknessMm: 0.3,
+  },
+  {
+    design: 'sleepyCat',
+    name: 'Sleepy cat',
+    category: 'fancy',
+    thicknessMm: 0.3,
+  },
+  {
+    design: 'dogBones',
+    name: 'Dog bones',
+    category: 'fancy',
+    thicknessMm: 0.3,
+  },
+  { design: 'fish', name: 'Fish', category: 'fancy', thicknessMm: 0.3 },
+  {
+    design: 'butterflies',
+    name: 'Butterflies',
+    category: 'fancy',
+    thicknessMm: 0.3,
+  },
+  { design: 'daisies', name: 'Daisies', category: 'fancy', thicknessMm: 0.3 },
+  {
+    design: 'leafyVine',
+    name: 'Leafy vine',
+    category: 'fancy',
+    thicknessMm: 0.3,
+  },
+  { design: 'tulips', name: 'Tulip row', category: 'fancy', thicknessMm: 0.3 },
+  {
+    design: 'mushrooms',
+    name: 'Mushrooms',
+    category: 'fancy',
+    thicknessMm: 0.3,
+  },
+  { design: 'fruit', name: 'Fruit', category: 'fancy', thicknessMm: 0.3 },
+  { design: 'cloud', name: 'Cloud', category: 'fancy', thicknessMm: 0.4 },
+  { design: 'lace', name: 'Lace', category: 'fancy', thicknessMm: 0.3 },
+  { design: 'crown', name: 'Crown', category: 'fancy', thicknessMm: 0.3 },
+  { design: 'bow', name: 'Bow', category: 'fancy', thicknessMm: 0.3 },
+  {
+    design: 'moonStars',
+    name: 'Moon and stars',
+    category: 'fancy',
+    thicknessMm: 0.3,
+  },
+  { design: 'sunshine', name: 'Sunshine', category: 'fancy', thicknessMm: 0.3 },
+  {
+    design: 'snowflakes',
+    name: 'Snowflakes',
+    category: 'fancy',
+    thicknessMm: 0.3,
+  },
+  { design: 'sparkles', name: 'Sparkles', category: 'fancy', thicknessMm: 0.3 },
+  {
+    design: 'heartArrow',
+    name: 'Heart and arrow',
+    category: 'fancy',
+    thicknessMm: 0.3,
+  },
+  {
+    design: 'musicNotes',
+    name: 'Music notes',
+    category: 'fancy',
+    thicknessMm: 0.3,
+  },
+  { design: 'balloons', name: 'Balloons', category: 'fancy', thicknessMm: 0.3 },
+  { design: 'bubbles', name: 'Bubbles', category: 'fancy', thicknessMm: 0.3 },
 ]
 
 export const FRAME_IDS: readonly FrameDesign[] = FRAMES.map((f) => f.design)

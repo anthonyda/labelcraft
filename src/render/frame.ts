@@ -6,6 +6,7 @@ import { frameFor, FRAMES } from '../model/frames'
 import type { FrameDesign, LabelFrame, LabelSetup } from '../model/types'
 import { labelSizePx, mmToPx } from '../model/units'
 import { inkPixels } from './bitmap'
+import { FANCY_DRAW } from './fancyFrames'
 
 export { frameFor }
 
@@ -167,7 +168,7 @@ const dashFrame = (
   run(false, x1 - t, y0, y1)
 }
 
-const DRAW: Record<Exclude<FrameDesign, 'none'>, (g: Geom) => void> = {
+const DRAW: Partial<Record<FrameDesign, (g: Geom) => void>> = {
   line: (g) => box(g, g.x0, g.y0, g.x1, g.y1, g.t),
   thick: (g) => box(g, g.x0, g.y0, g.x1, g.y1, g.t),
   double: (g) => {
@@ -466,9 +467,9 @@ const DRAW: Record<Exclude<FrameDesign, 'none'>, (g: Geom) => void> = {
     ctx.fill()
   },
   cornersDouble: (g) => {
-    DRAW.corners(g)
+    DRAW.corners!(g)
     const d = 2 * g.t
-    DRAW.corners({
+    DRAW.corners!({
       ...g,
       x0: g.x0 + d,
       y0: g.y0 + d,
@@ -726,7 +727,7 @@ export const renderFrame = (
 ): HTMLCanvasElement | undefined => {
   const frame: LabelFrame | undefined = label.frame
   if (!frame || frame.design === 'none') return undefined
-  const draw = DRAW[frame.design]
+  const draw = DRAW[frame.design] ?? FANCY_DRAW[frame.design]
   if (!draw) return undefined
   const { width: W, height: H } = labelSizePx(label)
   const dpi = label.dpi
