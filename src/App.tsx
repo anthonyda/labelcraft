@@ -93,6 +93,55 @@ function PrinterButton({ onClick }: { onClick: () => void }) {
   )
 }
 
+const mmText = (n: number) => String(Math.round(n * 100) / 100)
+
+/** R18.AC11: the loaded roll, in the header. */
+function RollChip({ onClick }: { onClick: () => void }) {
+  const printer = usePrinter()
+  const roll = printer.roll
+  if (printer.status !== 'connected' && printer.status !== 'printing') {
+    return null
+  }
+  const size = roll?.size
+    ? `${mmText(roll.size.widthMm)} × ${mmText(roll.size.lengthMm)} mm`
+    : undefined
+  const left = roll?.labelsLeft
+  if (!size && left === undefined) return null
+  const title =
+    'Loaded roll' +
+    (size ? `: ${size}` : '') +
+    (roll?.sizeSource === 'remembered' ? ' (remembered)' : '') +
+    (left !== undefined ? `, ${left} labels left` : '')
+  return (
+    <button
+      type="button"
+      className="roll-chip"
+      onClick={onClick}
+      title={title}
+      aria-label={title}
+      data-testid="roll-chip"
+    >
+      <Icon name="roll" />
+      <span className="roll-chip-text">
+        {size && (
+          <span className={left !== undefined ? 'roll-chip-size' : undefined}>
+            Roll {size}
+          </span>
+        )}
+        {size && left !== undefined && (
+          <span className="roll-chip-size"> · </span>
+        )}
+        {left !== undefined && (
+          <span>
+            {left}
+            <span className="roll-chip-size"> left</span>
+          </span>
+        )}
+      </span>
+    </button>
+  )
+}
+
 export default function App() {
   const [store] = useState(() => new EditorStore(sampleLabel()))
   const { history } = useSyncExternalStore(store.subscribe, store.getState)
@@ -127,6 +176,7 @@ export default function App() {
           <>
             <ThemeButton />
             <PrinterButton onClick={() => setPrinterOpen(true)} />
+            <RollChip onClick={() => setPrinterOpen(true)} />
             <Button
               icon="printer"
               className="primary"

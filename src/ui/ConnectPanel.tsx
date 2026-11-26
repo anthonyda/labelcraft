@@ -2,7 +2,13 @@
 import { modelsLibrary } from '@mmote/niimbluelib'
 import { useMemo, useState } from 'react'
 import { RollOffer } from '../editor/RollOffer'
-import { FAMILIES, FAMILY_ORDER, familyOfModel } from '../model/labelSizes'
+import {
+  FAMILIES,
+  FAMILY_ORDER,
+  LABEL_SIZES,
+  familyOfModel,
+} from '../model/labelSizes'
+import { useEditorState } from '../editor/useEditor'
 import { Button } from './icons'
 import {
   availableTransports,
@@ -65,6 +71,66 @@ function ModelPicker() {
   )
 }
 
+const mmText = (n: number) => String(Math.round(n * 100) / 100)
+
+/** R18.AC10: remember or forget the loaded roll's size. */
+function RollMemory() {
+  const state = usePrinter()
+  const label = useEditorState().history.present.label
+  const roll = state.roll
+  if (!roll?.tag?.barCode) return null
+  if (roll.sizeSource === 'remembered') {
+    return (
+      <Button icon="close" onClick={() => printerService.forgetRollSize()}>
+        Forget this roll's size
+      </Button>
+    )
+  }
+  if (roll.size) return null
+  const listed = LABEL_SIZES.find((s) => s.id === label.size)
+  if (!listed) {
+    return (
+      <p className="field-hint">
+        Pick this roll's size in the label's Size list to remember it.
+      </p>
+    )
+  }
+  const size = { widthMm: listed.rollWidthMm, lengthMm: listed.lengthMm }
+  return (
+    <Button icon="roll" onClick={() => printerService.rememberRollSize(size)}>
+      Remember: this roll is {mmText(size.widthMm)} × {mmText(size.lengthMm)} mm
+    </Button>
+  )
+}
+
+/** R18.AC9: raw facts about the roll, for diagnosis. */
+function RollDetails() {
+  const state = usePrinter()
+  const tag = state.roll?.tag
+  const answer = state.paperInfoAnswer
+  return (
+    <details className="roll-details" data-testid="roll-details">
+      <summary>Roll details</summary>
+      <dl>
+        <dt>Tag barcode</dt>
+        <dd>{tag?.barCode || 'none'}</dd>
+        <dt>Tag serial</dt>
+        <dd>{tag?.serial || 'none'}</dd>
+        <dt>Labels used</dt>
+        <dd>{tag ? `${tag.used} of ${tag.total}` : 'unknown'}</dd>
+        <dt>Paper info answer</dt>
+        <dd data-testid="paper-info-answer">
+          {answer === undefined
+            ? 'not asked yet'
+            : answer === 'no answer'
+              ? 'no answer'
+              : `${answer.length} bytes: ${answer.hex}`}
+        </dd>
+      </dl>
+    </details>
+  )
+}
+
 function RollInfo() {
   const state = usePrinter()
   if (state.status !== 'connected' && state.status !== 'printing') return null
@@ -86,7 +152,9 @@ function RollInfo() {
       >
         Read roll
       </Button>
+      <RollMemory />
       <RollOffer />
+      <RollDetails />
     </div>
   )
 }

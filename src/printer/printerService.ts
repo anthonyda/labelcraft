@@ -6,7 +6,9 @@
 import {
   ImageEncoder,
   LabelType,
+  PacketGenerator,
   PageColorType,
+  Utils,
   findPrintTask,
   getPrinterMetaByModel,
   instantiateClient,
@@ -35,7 +37,14 @@ export type LoadedRoll = {
   labelType?: LabelType
   /** From the roll's RFID tag, when present. */
   labelsLeft?: number
+  /** Where the size came from (R18.AC10). */
+  sizeSource?: 'printer' | 'remembered'
+  /** The roll's RFID tag, when read (R18.AC9). */
+  tag?: { barCode: string; serial: string; total: number; used: number }
 }
+
+/** R18.AC9: the printer's raw answer to the paper-info command. */
+export type PaperInfoAnswer = { hex: string; length: number } | 'no answer'
 
 /** R18.AC8: lid and tag state from the heartbeat, when reported. */
 export type RollSensor = {
@@ -67,6 +76,8 @@ export type PrinterState = {
   roll?: LoadedRoll
   /** What the printer's heartbeat says about the roll (R18.AC8). */
   rollSensor?: RollSensor
+  /** Raw paper-info answer, for diagnosis (R18.AC9). */
+  paperInfoAnswer?: PaperInfoAnswer
   /** Print task detected for the model, if any (R11.AC3). */
   printTask?: PrintTaskName
   progress?: PrintProgress
@@ -130,6 +141,7 @@ export const rollFromRfid = (info: CombinedRfidInfo): LoadedRoll => {
   const paper = info.paperInfo
   if (paper?.valid && paper.paperWidth && paper.paperHeight) {
     roll.size = { widthMm: paper.paperWidth, lengthMm: paper.paperHeight }
+    roll.sizeSource = 'printer'
   }
   const tag = info.labelRfidInfo
   const type =
@@ -141,7 +153,42 @@ export const rollFromRfid = (info: CombinedRfidInfo): LoadedRoll => {
   if (tag?.tagPresent && tag.allPaper >= 0 && tag.usedPaper >= 0) {
     roll.labelsLeft = Math.max(0, tag.allPaper - tag.usedPaper)
   }
+  if (tag?.tagPresent) {
+    roll.tag = {
+      barCode: tag.barCode,
+      serial: tag.serialNumber,
+      total: tag.allPaper,
+      used: tag.usedPaper,
+    }
+  }
   return roll
+}
+
+const ROLL_SIZES_SETTING = 'rollSizes'
+
+type RollSize = NonNullable<LoadedRoll['size']>
+
+/** R18.AC10: remembered sizes, by tag barcode. */
+const readRollSizes = (settings: SettingStore): Record<string, RollSize> => {
+  try {
+    const v: unknown = JSON.parse(settings.get(ROLL_SIZES_SETTING) ?? '{}')
+    if (!v || typeof v !== 'object') return {}
+    const out: Record<string, RollSize> = {}
+    for (const [k, s] of Object.entries(v as Record<string, unknown>)) {
+      const r = s as Partial<RollSize> | null
+      if (
+        typeof r?.widthMm === 'number' &&
+        typeof r.lengthMm === 'number' &&
+        r.widthMm > 0 &&
+        r.lengthMm > 0
+      ) {
+        out[k] = { widthMm: r.widthMm, lengthMm: r.lengthMm }
+      }
+    }
+    return out
+  } catch {
+    return {}
+  }
 }
 
 const MODEL_SETTING = 'printerModel'
@@ -219,7 +266,60 @@ export class PrinterService {
     const client = this.client
     if (!client || this.state.status !== 'connected') return
     const info = await client.fetchRfidInfo()
-    if (this.client === client) this.set({ roll: rollFromRfid(info) })
+    if (this.client === client) this.set({ roll: this.withMemory(info) })
+    await this.readPaperInfoAnswer(client)
+  }
+
+  /** R18.AC10: a reported size wins; else the size remembered for the tag. */
+  private withMemory(info: CombinedRfidInfo): LoadedRoll {
+    const roll = rollFromRfid(info)
+    if (roll.size || !roll.tag?.barCode) return roll
+    const size = readRollSizes(this.settings)[roll.tag.barCode]
+    return size ? { ...roll, size, sizeSource: 'remembered' } : roll
+  }
+
+  /** R18.AC9: ask for the paper info again and keep the raw bytes. */
+  private async readPaperInfoAnswer(client: NiimbotAbstractClient) {
+    let answer: PaperInfoAnswer
+    try {
+      const packet = await client.sendPacketWaitResponse(
+        PacketGenerator.getPaperInfo(),
+      )
+      answer = {
+        hex: Utils.bufToHex(packet.data, ' '),
+        length: packet.dataLength,
+      }
+    } catch {
+      answer = 'no answer'
+    }
+    if (this.client === client) this.set({ paperInfoAnswer: answer })
+  }
+
+  /** R18.AC10: remember the loaded roll's size for its tag barcode. */
+  rememberRollSize(size: RollSize): void {
+    const roll = this.state.roll
+    const code = roll?.tag?.barCode
+    if (!roll || !code || roll.sizeSource === 'printer') return
+    const sizes = { ...readRollSizes(this.settings), [code]: size }
+    this.settings.set(ROLL_SIZES_SETTING, JSON.stringify(sizes))
+    this.set({ roll: { ...roll, size, sizeSource: 'remembered' } })
+  }
+
+  /** R18.AC10: forget the remembered size of the loaded roll. */
+  forgetRollSize(): void {
+    const roll = this.state.roll
+    const code = roll?.tag?.barCode
+    if (!roll || !code || roll.sizeSource !== 'remembered') return
+    const sizes = readRollSizes(this.settings)
+    delete sizes[code]
+    this.settings.set(
+      ROLL_SIZES_SETTING,
+      Object.keys(sizes).length ? JSON.stringify(sizes) : undefined,
+    )
+    const rest = { ...roll }
+    delete rest.size
+    delete rest.sizeSource
+    this.set({ roll: rest })
   }
 
   /** R2.AC1–AC3: opens the browser device picker for real transports. */
@@ -245,7 +345,8 @@ export class PrinterService {
     // R18.AC1: the library reads the roll again when the lid or roll changes.
     client.on('rfidinfofetched', (e) => {
       if (this.client === client && this.state.status !== 'connecting') {
-        this.set({ roll: rollFromRfid(e.info) })
+        this.set({ roll: this.withMemory(e.info) })
+        void this.readPaperInfoAnswer(client)
       }
     })
     // R18.AC8: lid and tag state, to explain a missing roll.
@@ -267,7 +368,7 @@ export class PrinterService {
         model: detected,
         printTask: client.getPrintTaskType() ?? this.taskFor(chosen),
         // The library reads the roll while connecting (fetchRfidInfo).
-        roll: rollFromRfid(client.getRfidInfo()),
+        roll: this.withMemory(client.getRfidInfo()),
       }
       // R17.AC3: the detected model replaces the chosen one.
       if (detected) {
@@ -278,6 +379,7 @@ export class PrinterService {
         this.settings.set(MODEL_SETTING, detected.model)
       }
       this.set(patch)
+      await this.readPaperInfoAnswer(client)
     } catch (e) {
       this.client = undefined
       await client.disconnect().catch(() => undefined)

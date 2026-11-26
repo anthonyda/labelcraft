@@ -137,7 +137,22 @@ test('offer the loaded roll when the label has objects', async ({ page }) => {
   ).toHaveCount(0)
   await dialog.getByRole('button', { name: 'Read roll' }).click()
   await expect(dialog.getByTestId('loaded-roll')).toContainText('12 × 40 mm')
+  // R18.AC9: roll details, closed by default.
+  const details = dialog.getByTestId('roll-details')
+  await expect(details.getByTestId('paper-info-answer')).toBeHidden()
+  await details.getByText('Roll details').click()
+  await expect(details.getByTestId('paper-info-answer')).toContainText(
+    '18 bytes:',
+  )
+  await expect(details).toContainText('6972842743589')
   await dialog.getByRole('button', { name: 'Done' }).click()
+
+  // R18.AC11: the roll in the header.
+  const chip = page.getByTestId('roll-chip')
+  await expect(chip).toHaveAccessibleName(
+    'Loaded roll: 12 × 40 mm, 145 labels left',
+  )
+  await expect(chip).toContainText('145 left')
 
   const label = await labelGroup(page)
   await expect(label.getByLabel('Size')).toHaveValue('D-12x40')

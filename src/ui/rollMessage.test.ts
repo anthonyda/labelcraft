@@ -17,6 +17,15 @@ describe('roll message', () => {
     ).toBe('Loaded roll: 12 × 40 mm, labels with gaps · 145 labels left')
   })
 
+  it('marks a remembered size', () => {
+    expect(
+      rollMessage(
+        { size: { widthMm: 12, lengthMm: 40 }, sizeSource: 'remembered' },
+        undefined,
+      ).text,
+    ).toBe('Loaded roll: 12 × 40 mm (remembered)')
+  })
+
   it('shows what the tag gave when the size is missing', () => {
     expect(
       rollMessage(

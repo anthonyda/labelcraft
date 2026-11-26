@@ -589,6 +589,32 @@ fieldset,
   margin: 0;
 }
 
+/* R18.AC11: loaded roll in the header */
+.roll-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.roll-details summary {
+  cursor: pointer;
+}
+
+.roll-details dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 0.75rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+}
+
+.roll-details dd {
+  margin: 0;
+  font-family: ui-monospace, monospace;
+  overflow-wrap: anywhere;
+}
+
 /* M6c: icons (R20) */
 .icon {
   width: 20px;
@@ -1059,6 +1085,7 @@ button.icon-only {
 }
 
 .phone .brand-name,
+.phone .roll-chip-size,
 .phone .header-actions .btn-text,
 .phone .header-actions .badge,
 .phone .autosave {

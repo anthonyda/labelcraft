@@ -46,6 +46,11 @@ export type EmulatorOptions = {
   failAt?: 'printStart' | 'pageEnd' | 'status'
   /** Printer error code to report with `failAt` (default 1 = cover open). */
   errorCode?: number
+  /**
+   * Answer the paper-info command in a short form niimbluelib can't read,
+   * like a real D110_M: the tag is read but no size (R18.AC7).
+   */
+  shortPaperInfo?: boolean
   /** Report the lid as open in heartbeats. */
   lidOpen?: boolean
   /** Model id to report (default 2320, D110_M); unknown ids test R17.AC4. */
@@ -175,6 +180,7 @@ export class EmulatedD110MClient extends NiimbotAbstractClient {
       pageMs: 800,
       errorCode: 1,
       lidOpen: false,
+      shortPaperInfo: false,
       modelId: 2320,
       roll: DEFAULT_ROLL,
       ...options,
@@ -273,7 +279,7 @@ export class EmulatedD110MClient extends NiimbotAbstractClient {
         break
       case TX.GetPaperInfo: {
         const roll = this.options.roll
-        return roll
+        return roll && !this.options.shortPaperInfo
           ? reply(RX.In_GetPaperInfo, paperInfoAnswer(roll))
           : reply(RX.In_GetPaperInfo, [0, 0, 0, 0])
       }

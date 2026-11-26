@@ -42,7 +42,11 @@ describe('printer service: connection', () => {
   it('goes disconnected → connecting → connected with model info', async () => {
     const { service, states } = emulatedService()
     await service.connect('emulator')
-    expect(states.map((s) => s.status)).toEqual(['connecting', 'connected'])
+    // The last update adds the raw paper-info answer (R18.AC9).
+    expect([...new Set(states.map((s) => s.status))]).toEqual([
+      'connecting',
+      'connected',
+    ])
     expect(service.getState()).toMatchObject({
       status: 'connected',
       transport: 'emulator',
@@ -201,9 +205,17 @@ describe('printer service: loaded roll', () => {
     await service.connect('emulator')
     expect(service.getState().roll).toEqual({
       size: { widthMm: 12, lengthMm: 40 },
+      sizeSource: 'printer',
       labelType: LabelType.WithGaps,
       labelsLeft: 145,
+      tag: {
+        barCode: '6972842743589',
+        serial: 'EMULATEDROLL',
+        total: 155,
+        used: 10,
+      },
     })
+    expect(service.getState().paperInfoAnswer).toMatchObject({ length: 18 })
   })
 
   it('reports nothing when the printer does not know its roll', async () => {
@@ -227,7 +239,7 @@ describe('printer service: loaded roll', () => {
     })
     await service.connect('emulator')
     await service.readRoll()
-    expect(service.getState().roll).toEqual({
+    expect(service.getState().roll).toMatchObject({
       size: { widthMm: 50, lengthMm: 30 },
       labelType: LabelType.Transparent,
       labelsLeft: 230,
@@ -252,11 +264,58 @@ describe('printer service: loaded roll', () => {
     await client.fetchHeartbeatData() // tag now read: the library refetches
     await expect
       .poll(() => service.getState().roll)
-      .toEqual({
+      .toMatchObject({
         size: { widthMm: 12, lengthMm: 40 },
         labelType: LabelType.WithGaps,
         labelsLeft: 155,
       })
+  })
+
+  // R18.AC9, AC10: a D110_M reads the tag but not the size.
+  it('remembers a roll size by tag barcode', async () => {
+    const settings = memorySettings()
+    const { service } = emulatedService({ shortPaperInfo: true }, settings)
+    await service.connect('emulator')
+    expect(service.getState().roll?.size).toBeUndefined()
+    expect(service.getState().roll?.labelsLeft).toBe(145)
+    expect(service.getState().paperInfoAnswer).toEqual({
+      hex: '00 00 00 00',
+      length: 4,
+    })
+    service.rememberRollSize({ widthMm: 12, lengthMm: 40 })
+    expect(service.getState().roll).toMatchObject({
+      size: { widthMm: 12, lengthMm: 40 },
+      sizeSource: 'remembered',
+    })
+    expect(JSON.parse(settings.get('rollSizes')!)).toEqual({
+      '6972842743589': { widthMm: 12, lengthMm: 40 },
+    })
+
+    // A new connection uses the remembered size.
+    await service.disconnect()
+    await service.connect('emulator')
+    expect(service.getState().roll).toMatchObject({
+      size: { widthMm: 12, lengthMm: 40 },
+      sizeSource: 'remembered',
+    })
+
+    service.forgetRollSize()
+    expect(service.getState().roll?.size).toBeUndefined()
+    expect(settings.get('rollSizes')).toBeUndefined()
+  })
+
+  it('prefers the size the printer reports', async () => {
+    const settings = memorySettings()
+    settings.set(
+      'rollSizes',
+      JSON.stringify({ '6972842743589': { widthMm: 15, lengthMm: 50 } }),
+    )
+    const { service } = emulatedService({}, settings)
+    await service.connect('emulator')
+    expect(service.getState().roll).toMatchObject({
+      size: { widthMm: 12, lengthMm: 40 },
+      sizeSource: 'printer',
+    })
   })
 
   // R18.AC8

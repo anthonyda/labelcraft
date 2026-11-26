@@ -22,6 +22,7 @@ export const rollMessage = (
     return {
       text:
         `Loaded roll: ${roll.size.widthMm} × ${roll.size.lengthMm} mm` +
+        (roll.sizeSource === 'remembered' ? ' (remembered)' : '') +
         (type ? `, ${type}` : '') +
         (left ? ` · ${left}` : ''),
     }
