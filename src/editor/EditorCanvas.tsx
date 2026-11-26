@@ -19,6 +19,7 @@ import type { LabelObject, TextObject } from '../model/types'
 import { labelSizePx, mmToPx, ptToPx, pxToMm } from '../model/units'
 import { CLEAR, rollColorOf } from '../model/rollColors'
 import { renderFrame } from '../render/frame'
+import { textFontPt } from '../render/textFit'
 import { inkOutsideBox } from '../render/inkBounds'
 import { snapBox } from './snap'
 import { useMagnet } from './useMagnet'
@@ -195,7 +196,8 @@ function TextEditor({
         height: box.height * scale,
         transform: o.rotation ? `rotate(${o.rotation}deg)` : undefined,
         fontFamily: o.fontFamily,
-        fontSize: ptToPx(o.fontSize, dpi) * scale,
+        fontSize:
+          ptToPx(textFontPt(o, box.width, box.height, dpi), dpi) * scale,
         fontWeight: o.bold ? 'bold' : 'normal',
         fontStyle: o.italic ? 'italic' : 'normal',
         textDecoration: o.underline ? 'underline' : 'none',

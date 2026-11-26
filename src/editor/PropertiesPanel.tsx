@@ -41,6 +41,7 @@ import {
 import { FramePicker } from './FramePicker'
 import { RollColorPicker } from './RollColorPicker'
 import { RollOffer } from './RollOffer'
+import { TextSize } from './TextSize'
 import { useEditorState, useEditorStore } from './useEditor'
 
 const TYPE_NAMES: Record<LabelObject['type'], string> = {
@@ -213,15 +214,7 @@ function ObjectFields({ o }: { o: LabelObject }) {
               options={FONT_FAMILIES.map((f) => [f, f] as const)}
               onChange={(fontFamily) => set({ fontFamily })}
             />
-            <NumberField
-              label="Size"
-              unit="pt"
-              value={o.fontSize}
-              min={1}
-              max={200}
-              step={1}
-              onChange={(fontSize) => set({ fontSize }, 'fontSize')}
-            />
+            <TextSize o={o} onChange={(patch, key) => set(patch, key)} />
             <div className="field-row">
               <CheckField
                 label="Bold"

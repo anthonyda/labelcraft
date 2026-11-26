@@ -67,6 +67,7 @@ describe('ink outside the label', () => {
       height: 30,
       text: 'Hi',
       fontSize: 10,
+      autoSize: false,
     } as LabelObject
     doc.objects.push(text)
     expect((await renderLabel(doc)).outside).toEqual([])

@@ -209,3 +209,38 @@ test('label setup with printer dpi and print-head warning', async ({
   await label.getByLabel('Height (mm)').fill('20')
   await expect(label.getByRole('note')).toContainText('print head is 96 dots')
 })
+
+// R5.AC4–AC6: new text is centred, fits its box; size slider.
+test('text size: fit to box, then slider', async ({ page }) => {
+  await openPanel(page, 'Add')
+  await page
+    .getByRole('group', { name: 'Add' })
+    .getByRole('button', { name: 'Text', exact: true })
+    .click()
+  await openPanel(page, 'Properties')
+  const p = props(page)
+  await expect(p.getByLabel('Alignment')).toHaveValue('center')
+  const fit = p.getByLabel('Fit to box')
+  const size = p.getByLabel('Size (pt)')
+  const slider = p.getByLabel('Size slider')
+  await expect(fit).toBeChecked()
+  await expect(size).toBeDisabled()
+  await expect(slider).toBeDisabled()
+  const before = Number(await size.inputValue())
+
+  // A taller box: bigger text.
+  const h = p.getByLabel('Height (mm)')
+  await h.fill('')
+  await h.pressSequentially('10')
+  await expect
+    .poll(async () => Number(await size.inputValue()))
+    .toBeGreaterThan(before)
+  const fitted = await size.inputValue()
+
+  // Off keeps the size used; the slider then sets it.
+  await fit.uncheck()
+  await expect(size).toBeEnabled()
+  await expect(size).toHaveValue(fitted)
+  await slider.fill('12')
+  await expect(size).toHaveValue('12')
+})

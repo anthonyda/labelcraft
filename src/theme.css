@@ -508,6 +508,25 @@ dialog {
   background: transparent;
 }
 
+/* Text size: slider + number (R5.AC5) */
+.text-size-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.text-size-row input[type='range'] {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+}
+
+.text-size-row input[type='number'] {
+  width: 5.5rem;
+  flex: none;
+}
+
 /* Magnet switch (R26.AC3) */
 button.toggle-on {
   background: var(--selection);

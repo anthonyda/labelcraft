@@ -132,6 +132,8 @@ export type TextObject = ObjectBase & {
   align: TextAlign
   /** Line height as a multiple of font size. */
   lineHeight: number
+  /** Fit to box (R5.AC6): drawn at the largest size that fits; missing = off. */
+  autoSize?: boolean
 }
 
 export type ImageMode = 'threshold' | 'dither'

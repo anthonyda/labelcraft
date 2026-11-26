@@ -72,6 +72,8 @@ export const createObject = (
         // R5.AC4: centred by default.
         align: 'center',
         lineHeight: 1.2,
+        // R5.AC6: new text fits its box.
+        autoSize: true,
       }
     case 'image':
       // R6.AC2: threshold mode by default, at the middle of 1–255.

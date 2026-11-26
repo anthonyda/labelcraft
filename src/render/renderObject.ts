@@ -6,6 +6,7 @@
  * bitmaps, so the editor shows exactly what will print (C7).
  */
 import Konva from 'konva'
+import { textFontPt } from './textFit'
 import type { ImageObject, LabelObject, TextObject } from '../model/types'
 import { mmToPx, ptToPx } from '../model/units'
 import {
@@ -83,7 +84,7 @@ const objectNodes = async (
           width: w,
           text: o.text,
           fontFamily: o.fontFamily,
-          fontSize: ptToPx(o.fontSize, dpi),
+          fontSize: ptToPx(textFontPt(o, w, h, dpi), dpi),
           fontStyle: textFontStyle(o),
           textDecoration: o.underline ? 'underline' : '',
           align: o.align,
