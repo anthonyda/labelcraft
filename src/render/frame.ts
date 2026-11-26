@@ -432,6 +432,289 @@ const DRAW: Record<Exclude<FrameDesign, 'none'>, (g: Geom) => void> = {
     }
     ctx.fill()
   },
+  triple: (g) => {
+    for (let k = 0; k < 3; k++) {
+      const d = 2 * g.t * k
+      box(g, g.x0 + d, g.y0 + d, g.x1 - d, g.y1 - d, g.t)
+    }
+  },
+  shadow: (g) => {
+    const s = Math.max(2 * g.t, Math.round(0.8 * g.mm))
+    box(g, g.x0, g.y0, g.x1 - s, g.y1 - s, g.t)
+    g.ctx.fillRect(g.x1 - s, g.y0 + s, s, g.y1 - g.y0 - s)
+    g.ctx.fillRect(g.x0 + s, g.y1 - s, g.x1 - g.x0 - s, s)
+  },
+  longDash: (g) => {
+    const dash = Math.max(6 * g.t, Math.round(4 * g.mm))
+    dashFrame(g, [dash, Math.max(g.t, Math.round(1.2 * g.mm))])
+  },
+  doubleDashed: (g) => {
+    const dash = Math.max(3 * g.t, Math.round(2 * g.mm))
+    const gap = Math.max(g.t, Math.round(dash / 2))
+    dashFrame(g, [dash, gap])
+    const d = 2 * g.t
+    dashFrame(g, [dash, gap], g.x0 + d, g.y0 + d, g.x1 - d, g.y1 - d)
+  },
+  roundDots: (g) => {
+    const { ctx } = g
+    const r = Math.max(0.8 * g.t, 1.5)
+    ctx.beginPath()
+    for (const p of alongEdges(g.x0 + r, g.y0 + r, g.x1 - r, g.y1 - r, 4 * r)) {
+      ctx.moveTo(p.x + r, p.y)
+      ctx.arc(p.x, p.y, r, 0, 2 * Math.PI)
+    }
+    ctx.fill()
+  },
+  cornersDouble: (g) => {
+    DRAW.corners(g)
+    const d = 2 * g.t
+    DRAW.corners({
+      ...g,
+      x0: g.x0 + d,
+      y0: g.y0 + d,
+      x1: g.x1 - d,
+      y1: g.y1 - d,
+    })
+  },
+  cornerTriangles: (g) => {
+    const { ctx, x0, y0, x1, y1 } = g
+    const l = Math.max(
+      2 * g.t,
+      Math.min(3 * g.mm, (x1 - x0) / 4, (y1 - y0) / 4),
+    )
+    ctx.beginPath()
+    for (const [x, y, dx, dy] of [
+      [x0, y0, 1, 1],
+      [x1, y0, -1, 1],
+      [x0, y1, 1, -1],
+      [x1, y1, -1, -1],
+    ]) {
+      ctx.moveTo(x, y)
+      ctx.lineTo(x + dx * l, y)
+      ctx.lineTo(x, y + dy * l)
+      ctx.closePath()
+    }
+    ctx.fill()
+  },
+  cornerSquares: (g) => {
+    const { x0, y0, x1, y1 } = g
+    const s = Math.max(
+      3 * g.t,
+      Math.min(2.5 * g.mm, (x1 - x0) / 4, (y1 - y0) / 4),
+    )
+    box(g, x0, y0, x0 + s, y0 + s, g.t)
+    box(g, x1 - s, y0, x1, y0 + s, g.t)
+    box(g, x0, y1 - s, x0 + s, y1, g.t)
+    box(g, x1 - s, y1 - s, x1, y1, g.t)
+  },
+  oval: (g) =>
+    strokeInside(g, (x0, y0, x1, y1) =>
+      g.ctx.ellipse(
+        (x0 + x1) / 2,
+        (y0 + y1) / 2,
+        (x1 - x0) / 2,
+        (y1 - y0) / 2,
+        0,
+        0,
+        2 * Math.PI,
+      ),
+    ),
+  hexagon: (g) =>
+    strokeInside(g, (x0, y0, x1, y1) => {
+      const cy = (y0 + y1) / 2
+      const p = Math.min((y1 - y0) / 2, (x1 - x0) / 6)
+      const { ctx } = g
+      ctx.moveTo(x0 + p, y0)
+      ctx.lineTo(x1 - p, y0)
+      ctx.lineTo(x1, cy)
+      ctx.lineTo(x1 - p, y1)
+      ctx.lineTo(x0 + p, y1)
+      ctx.lineTo(x0, cy)
+      ctx.closePath()
+    }),
+  arrow: (g) =>
+    strokeInside(g, (x0, y0, x1, y1) => {
+      const cy = (y0 + y1) / 2
+      const p = Math.min((y1 - y0) / 2, (x1 - x0) / 5)
+      const { ctx } = g
+      ctx.moveTo(x0, y0)
+      ctx.lineTo(x1 - p, y0)
+      ctx.lineTo(x1, cy)
+      ctx.lineTo(x1 - p, y1)
+      ctx.lineTo(x0, y1)
+      ctx.closePath()
+    }),
+  bubble: (g) =>
+    strokeInside(g, (x0, y0, x1, y1) => {
+      const th = Math.min((y1 - y0) / 4, 2.5 * g.mm)
+      const by = y1 - th
+      const r = Math.min(1.5 * g.mm, (by - y0) / 2)
+      const w = x1 - x0
+      const ta = x0 + Math.max(r, w * 0.12)
+      const tb = ta + Math.min(w * 0.12, 3 * g.mm)
+      const { ctx } = g
+      // One outline: rounded body with a tail at the bottom left.
+      ctx.moveTo(x0 + r, y0)
+      ctx.lineTo(x1 - r, y0)
+      ctx.arcTo(x1, y0, x1, y0 + r, r)
+      ctx.lineTo(x1, by - r)
+      ctx.arcTo(x1, by, x1 - r, by, r)
+      ctx.lineTo(tb, by)
+      ctx.lineTo(ta - Math.min(w * 0.04, g.mm), y1)
+      ctx.lineTo(ta, by)
+      ctx.lineTo(x0 + r, by)
+      ctx.arcTo(x0, by, x0, by - r, r)
+      ctx.lineTo(x0, y0 + r)
+      ctx.arcTo(x0, y0, x0 + r, y0, r)
+      ctx.closePath()
+    }),
+  starburst: (g) =>
+    strokeInside(g, (x0, y0, x1, y1) => {
+      const cx = (x0 + x1) / 2
+      const cy = (y0 + y1) / 2
+      const rx = (x1 - x0) / 2
+      const ry = (y1 - y0) / 2
+      const perimeter = Math.PI * (rx + ry)
+      const n = Math.max(8, Math.round(perimeter / (2.2 * g.mm)))
+      const inner = 1 - Math.min(0.18, (1.2 * g.mm) / Math.min(rx, ry))
+      const { ctx } = g
+      for (let k = 0; k < 2 * n; k++) {
+        const a = (k * Math.PI) / n
+        const f = k % 2 === 0 ? 1 : inner
+        const x = cx + Math.cos(a) * rx * f
+        const y = cy + Math.sin(a) * ry * f
+        if (k === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+      }
+      ctx.closePath()
+    }),
+  stars: (g) => {
+    const { ctx } = g
+    const s = Math.max(3 * g.t, 1.6 * g.mm) / 2
+    ctx.beginPath()
+    for (const p of alongEdges(g.x0 + s, g.y0 + s, g.x1 - s, g.y1 - s, 3 * s)) {
+      for (let k = 0; k < 10; k++) {
+        const a = -Math.PI / 2 + (k * Math.PI) / 5
+        const r = k % 2 === 0 ? s : s * 0.45
+        const x = p.x + Math.cos(a) * r
+        const y = p.y + Math.sin(a) * r
+        if (k === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+      }
+      ctx.closePath()
+    }
+    ctx.fill()
+  },
+  hearts: (g) => {
+    const { ctx } = g
+    const s = Math.max(3 * g.t, 1.6 * g.mm) / 2
+    ctx.beginPath()
+    for (const p of alongEdges(g.x0 + s, g.y0 + s, g.x1 - s, g.y1 - s, 3 * s)) {
+      const top = p.y - s * 0.45
+      ctx.moveTo(p.x, p.y + s)
+      ctx.bezierCurveTo(
+        p.x - s * 1.3,
+        p.y,
+        p.x - s * 0.9,
+        top - s * 0.7,
+        p.x,
+        top,
+      )
+      ctx.bezierCurveTo(
+        p.x + s * 0.9,
+        top - s * 0.7,
+        p.x + s * 1.3,
+        p.y,
+        p.x,
+        p.y + s,
+      )
+      ctx.closePath()
+    }
+    ctx.fill()
+  },
+  crosses: (g) => {
+    const { ctx } = g
+    const s = Math.max(3 * g.t, 1.4 * g.mm) / 2
+    const w = Math.max(1, g.t)
+    for (const p of alongEdges(g.x0 + s, g.y0 + s, g.x1 - s, g.y1 - s, 3 * s)) {
+      ctx.fillRect(
+        Math.round(p.x - s),
+        Math.round(p.y - w / 2),
+        Math.round(2 * s),
+        w,
+      )
+      ctx.fillRect(
+        Math.round(p.x - w / 2),
+        Math.round(p.y - s),
+        w,
+        Math.round(2 * s),
+      )
+    }
+  },
+  checker: (g) => {
+    const { ctx } = g
+    const b = Math.max(2 * g.t, Math.round(g.mm))
+    const cells = (
+      ax: number,
+      ay: number,
+      len: number,
+      horizontal: boolean,
+    ) => {
+      const n = Math.max(2, Math.round(len / b))
+      const step = len / n
+      for (let k = 0; k < n; k++) {
+        for (let row = 0; row < 2; row++) {
+          if ((k + row) % 2) continue
+          if (horizontal)
+            ctx.fillRect(
+              Math.round(ax + k * step),
+              ay + row * b,
+              Math.ceil(step),
+              b,
+            )
+          else
+            ctx.fillRect(
+              ax + row * b,
+              Math.round(ay + k * step),
+              b,
+              Math.ceil(step),
+            )
+        }
+      }
+    }
+    const w = g.x1 - g.x0
+    const h = g.y1 - g.y0
+    cells(g.x0, g.y0, w, true)
+    cells(g.x0, g.y1 - 2 * b, w, true)
+    cells(g.x0, g.y0 + 2 * b, h - 4 * b, false)
+    cells(g.x1 - 2 * b, g.y0 + 2 * b, h - 4 * b, false)
+  },
+  sawtooth: (g) => {
+    const { ctx, mm } = g
+    const d = Math.max(2 * g.t, 1.1 * mm)
+    ctx.beginPath()
+    const teeth = (ax: number, ay: number, bx: number, by: number) => {
+      const len = Math.hypot(bx - ax, by - ay)
+      const n = Math.max(1, Math.round(len / (2 * mm)))
+      const ux = (bx - ax) / len
+      const uy = (by - ay) / len
+      // Inward normal (clockwise edges): (-uy, ux).
+      for (let k = 0; k < n; k++) {
+        const s = (len * k) / n
+        const e = (len * (k + 1)) / n
+        const m = (s + e) / 2
+        ctx.moveTo(ax + ux * s, ay + uy * s)
+        ctx.lineTo(ax + ux * m - uy * d, ay + uy * m + ux * d)
+        ctx.lineTo(ax + ux * e, ay + uy * e)
+        ctx.closePath()
+      }
+    }
+    teeth(g.x0, g.y0, g.x1, g.y0)
+    teeth(g.x1, g.y0, g.x1, g.y1)
+    teeth(g.x1, g.y1, g.x0, g.y1)
+    teeth(g.x0, g.y1, g.x0, g.y0)
+    ctx.fill()
+  },
 }
 
 /**

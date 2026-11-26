@@ -57,6 +57,19 @@ describe('label frames', () => {
           banner: 4 + 32 + 3,
           pill: 4 + 15,
           stitched: 4 + 8 + 3,
+          triple: 4 + 5 * 2 + 2,
+          cornerTriangles: 4 + 24 + 2,
+          cornerSquares: 4 + 20 + 2,
+          oval: 4 + 25,
+          hexagon: 4 + 40,
+          arrow: 4 + 40,
+          bubble: 4 + 25,
+          starburst: 4 + 40,
+          stars: 4 + 14 + 2,
+          hearts: 4 + 14 + 2,
+          crosses: 4 + 12 + 2,
+          checker: 4 + 16 + 2,
+          sawtooth: 4 + 10 + 2,
         } as Record<string, number>
       )[design] ?? 4 + 3 * 3 + 2,
     )
@@ -92,7 +105,7 @@ describe('frame catalogue', () => {
   it('has five categories and draws every design', async () => {
     const { FRAMES, FRAME_CATEGORIES } = await import('../model/frames')
     expect(FRAME_CATEGORIES).toHaveLength(5)
-    expect(FRAMES).toHaveLength(26)
+    expect(FRAMES).toHaveLength(44)
     for (const f of FRAMES.filter((f) => f.design !== 'none')) {
       const c = renderFrame(label(frameFor(f.design)))!
       const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data

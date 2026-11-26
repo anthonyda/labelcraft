@@ -113,6 +113,11 @@ test('frame categories; a decorative frame prints', async ({ page }) => {
     'Stamp',
     'Beads',
     'Diamonds',
+    'Stars',
+    'Hearts',
+    'Crosses',
+    'Checker',
+    'Sawtooth',
   ])
   await frames.getByRole('button', { name: 'Stamp' }).click()
   await expect(frames.getByRole('button', { name: 'Stamp' })).toHaveAttribute(
