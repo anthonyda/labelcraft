@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks -- Playwright fixtures' use(), not React */
 /**
  * Runs the E2E suite in a Chromium browser on a real Android phone, over its
  * DevTools socket forwarded by adb (ANDROID_CDP_URL), without
