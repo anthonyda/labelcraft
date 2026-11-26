@@ -719,3 +719,23 @@ button.toggle-on {
   padding: 0 1rem;
   line-height: 1.5;
 }
+
+/* Install help (R30.AC4) */
+.install-steps {
+  margin: 0 0 0.75rem;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+/* The Labels row stays on one line on narrow desktops: icon only. */
+@media (max-width: 960px) {
+  .desktop .install-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

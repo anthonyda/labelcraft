@@ -3,6 +3,7 @@
  * export PNG. Replacing a label with unsaved changes asks first.
  */
 import { useRef, useState } from 'react'
+import { InstallButton } from '../ui/InstallButton'
 import { newDoc } from '../model/factory'
 import { fromJson, toJson } from '../model/serialize'
 import type { LabelDoc } from '../model/types'
@@ -233,6 +234,8 @@ export function FileMenu() {
         <Button icon="exportPng" onClick={exportPng}>
           Export PNG
         </Button>
+        {/* R30.AC4 */}
+        <InstallButton />
         <input
           ref={importRef}
           type="file"

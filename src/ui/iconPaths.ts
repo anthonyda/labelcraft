@@ -61,6 +61,8 @@ export const ICONS = {
   add: 'M12 5v14 M5 12h14',
   minus: 'M5 12h14',
   grid: 'M5 5h.01 M12 5h.01 M19 5h.01 M5 12h.01 M12 12h.01 M19 12h.01 M5 19h.01 M12 19h.01 M19 19h.01',
+  install:
+    'M12 3v11 M7.5 9.5L12 14l4.5-4.5 M6 13v5a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-5',
   magnet: 'M6 3v9a6 6 0 0 0 12 0V3h-4v9a2 2 0 0 1-4 0V3z M6 7h4 M14 7h4',
   grip: 'M9 6h.01 M15 6h.01 M9 12h.01 M15 12h.01 M9 18h.01 M15 18h.01',
   ruler: 'M3 8h18v8H3z M7 8v3 M11 8v4 M15 8v3 M19 8v4',
