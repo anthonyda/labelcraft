@@ -11,6 +11,7 @@ import {
   getPrinterMetaByModel,
   instantiateClient,
   type CombinedRfidInfo,
+  type HeartbeatData,
   type NiimbotAbstractClient,
   type PrintProgressEvent,
   type PrintPacketProgressEvent,
@@ -36,6 +37,22 @@ export type LoadedRoll = {
   labelsLeft?: number
 }
 
+/** R18.AC8: lid and tag state from the heartbeat, when reported. */
+export type RollSensor = {
+  lidOpen?: boolean
+  /** False when the printer says it couldn't read the roll's tag. */
+  tagRead?: boolean
+}
+
+/** R18.AC8: the heartbeat fields that explain a missing roll. */
+export const rollSensorFrom = (data: HeartbeatData): RollSensor => ({
+  lidOpen: data.lidClosed === undefined ? undefined : !data.lidClosed,
+  tagRead: data.paperRfidSuccess,
+})
+
+const sameSensor = (a?: RollSensor, b?: RollSensor) =>
+  a?.lidOpen === b?.lidOpen && a?.tagRead === b?.tagRead
+
 export type PrinterState = {
   status: PrinterStatus
   transport?: Transport
@@ -46,8 +63,10 @@ export type PrinterState = {
   chosen?: PrinterModelMeta
   /** Set when a detected model replaced a different chosen one (R17.AC3). */
   modelNotice?: string
-  /** Loaded roll, read on connect and on request (R18.AC1). */
+  /** Loaded roll, read on connect, on request and on change (R18.AC1). */
   roll?: LoadedRoll
+  /** What the printer's heartbeat says about the roll (R18.AC8). */
+  rollSensor?: RollSensor
   /** Print task detected for the model, if any (R11.AC3). */
   printTask?: PrintTaskName
   progress?: PrintProgress
@@ -222,6 +241,20 @@ export class PrinterService {
         { status: 'disconnected', transport: this.state.transport },
         true,
       )
+    })
+    // R18.AC1: the library reads the roll again when the lid or roll changes.
+    client.on('rfidinfofetched', (e) => {
+      if (this.client === client && this.state.status !== 'connecting') {
+        this.set({ roll: rollFromRfid(e.info) })
+      }
+    })
+    // R18.AC8: lid and tag state, to explain a missing roll.
+    client.on('heartbeat', (e) => {
+      if (this.client !== client) return
+      const sensor = rollSensorFrom(e.data)
+      if (!sameSensor(sensor, this.state.rollSensor)) {
+        this.set({ rollSensor: sensor })
+      }
     })
 
     try {

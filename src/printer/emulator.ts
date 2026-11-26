@@ -182,6 +182,16 @@ export class EmulatedD110MClient extends NiimbotAbstractClient {
     this.setPacketInterval(0)
   }
 
+  /** Swap the loaded roll (null = none), as if the user changed it. */
+  setRoll(roll: EmulatedRoll | null): void {
+    this.options.roll = roll
+  }
+
+  /** Open or close the lid. */
+  setLidOpen(open: boolean): void {
+    this.options.lidOpen = open
+  }
+
   /** Pages received in the last print job, in printer orientation. */
   get receivedPages(): ReceivedPage[] {
     return this.job?.pages ?? []
@@ -273,7 +283,8 @@ export class EmulatedD110MClient extends NiimbotAbstractClient {
       }
       case TX.Heartbeat:
         if (d[0] === 4 || d[0] === 1) {
-          // Advanced2: battery, temperature, lid (0 = closed), paper (0 = in)
+          // Advanced2: battery, temperature, lid (0 = closed), paper
+          // (0 = in), roll tag read (1 = yes)
           return reply(RX.In_HeartbeatAdvanced2, [
             0x0f,
             0xd1,
@@ -281,7 +292,7 @@ export class EmulatedD110MClient extends NiimbotAbstractClient {
             0x4d,
             this.options.lidOpen ? 1 : 0,
             0,
-            0,
+            this.options.roll && !this.options.lidOpen ? 1 : 0,
             0,
             0,
             0,

@@ -233,4 +233,48 @@ describe('printer service: loaded roll', () => {
       labelsLeft: 230,
     })
   })
+  // R18.AC1: the library re-reads the roll when its heartbeat sees a change.
+  it('follows a roll change the printer notices by itself', async () => {
+    const { service } = emulatedService({ roll: null })
+    await service.connect('emulator')
+    expect(service.getState().roll).toEqual({})
+    const client = service.getClient() as EmulatedD110MClient
+    client.stopHeartbeat()
+    await client.fetchHeartbeatData()
+    client.setRoll({
+      widthMm: 12,
+      lengthMm: 40,
+      gapMm: 2,
+      labelType: LabelType.WithGaps,
+      total: 155,
+      used: 0,
+    })
+    await client.fetchHeartbeatData() // tag now read: the library refetches
+    await expect
+      .poll(() => service.getState().roll)
+      .toEqual({
+        size: { widthMm: 12, lengthMm: 40 },
+        labelType: LabelType.WithGaps,
+        labelsLeft: 155,
+      })
+  })
+
+  // R18.AC8
+  it('keeps the lid and tag state from the heartbeat', async () => {
+    const { service } = emulatedService({ roll: null })
+    await service.connect('emulator')
+    const client = service.getClient() as EmulatedD110MClient
+    client.stopHeartbeat()
+    await client.fetchHeartbeatData()
+    expect(service.getState().rollSensor).toEqual({
+      lidOpen: false,
+      tagRead: false,
+    })
+    client.setLidOpen(true)
+    await client.fetchHeartbeatData()
+    expect(service.getState().rollSensor).toEqual({
+      lidOpen: true,
+      tagRead: false,
+    })
+  })
 })

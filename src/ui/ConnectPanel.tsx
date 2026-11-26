@@ -1,5 +1,5 @@
 /** Connect / disconnect (T2.4, R1, R2, R16), printer model (R17), roll (R18). */
-import { LabelType, modelsLibrary } from '@mmote/niimbluelib'
+import { modelsLibrary } from '@mmote/niimbluelib'
 import { useMemo, useState } from 'react'
 import { RollOffer } from '../editor/RollOffer'
 import { FAMILIES, FAMILY_ORDER, familyOfModel } from '../model/labelSizes'
@@ -11,6 +11,7 @@ import {
   type Transport,
 } from '../printer/capabilities'
 import { printerService, usePrinter } from '../printer/usePrinter'
+import { rollMessage } from './rollMessage'
 
 /** Library models grouped by size family (R17.AC2). */
 const MODEL_GROUPS: [string, string[]][] = (() => {
@@ -25,13 +26,6 @@ const MODEL_GROUPS: [string, string[]][] = (() => {
   groups.push(['Other models', names.filter((m) => !familyOfModel(m))])
   return groups
 })()
-
-const LABEL_TYPE_NAMES: Partial<Record<LabelType, string>> = {
-  [LabelType.WithGaps]: 'labels with gaps',
-  [LabelType.Black]: 'black mark',
-  [LabelType.Continuous]: 'continuous',
-  [LabelType.Transparent]: 'transparent labels',
-}
 
 function ModelPicker() {
   const state = usePrinter()
@@ -73,20 +67,16 @@ function ModelPicker() {
 
 function RollInfo() {
   const state = usePrinter()
-  const roll = state.roll
   if (state.status !== 'connected' && state.status !== 'printing') return null
-  const type = roll?.labelType && LABEL_TYPE_NAMES[roll.labelType]
+  const { text, hint } = rollMessage(state.roll, state.rollSensor)
   return (
     <div className="roll-info">
-      {roll?.size ? (
-        <p className="status" data-testid="loaded-roll">
-          Loaded roll: {roll.size.widthMm} × {roll.size.lengthMm} mm
-          {type && `, ${type}`}
-          {roll.labelsLeft !== undefined && ` · ${roll.labelsLeft} labels left`}
-        </p>
-      ) : (
-        <p className="status" data-testid="loaded-roll">
-          This printer didn't report the loaded roll.
+      <p className="status" data-testid="loaded-roll">
+        {text}
+      </p>
+      {hint && (
+        <p className="field-hint" data-testid="roll-hint">
+          {hint}
         </p>
       )}
       <Button
