@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "baseUrl": "..",
+    "paths": {
+      "@playwright/test": ["e2e-android/test.ts"]
+    }
+  }
+}
