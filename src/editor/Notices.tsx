@@ -3,7 +3,8 @@
  * itself (R8.AC5), and a banner that stays while objects are outside the
  * label (R19.AC5).
  */
-import { useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { canPrintToHardware, detectCapabilities } from '../printer/capabilities'
 import { Button, Icon } from '../ui/icons'
 import { useEditorState, useEditorStore, useObjectsOutside } from './useEditor'
 
@@ -13,6 +14,11 @@ export function Notices() {
   const store = useEditorStore()
   const { history, notice } = useEditorState()
   const outside = useObjectsOutside(history.present)
+  // R1.AC1: say on load when this browser can't reach printers.
+  const canPrint = useMemo(() => canPrintToHardware(detectCapabilities()), [])
+  const [browserNoticeOpen, setBrowserNoticeOpen] = useState(
+    () => !sessionStorage.getItem('labelcraft.browserNoticeDismissed'),
+  )
 
   useEffect(() => {
     if (!notice) return
@@ -22,6 +28,29 @@ export function Notices() {
 
   return (
     <div className="notices">
+      {!canPrint && browserNoticeOpen && (
+        <div
+          className="banner banner-info"
+          role="status"
+          data-testid="browser-notice"
+        >
+          <Icon name="info" />
+          <span>
+            This browser can't print to label printers: use Chrome, Edge or
+            Opera on a computer, or Chrome on Android. You can still design
+            labels here.
+          </span>
+          <Button
+            icon="close"
+            aria-label="Dismiss"
+            className="icon-only"
+            onClick={() => {
+              sessionStorage.setItem('labelcraft.browserNoticeDismissed', '1')
+              setBrowserNoticeOpen(false)
+            }}
+          />
+        </div>
+      )}
       {outside.length > 0 && (
         <div
           className="banner banner-warning"
