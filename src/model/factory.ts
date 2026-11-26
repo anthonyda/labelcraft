@@ -69,7 +69,8 @@ export const createObject = (
         bold: false,
         italic: false,
         underline: false,
-        align: 'left',
+        // R5.AC4: centred by default.
+        align: 'center',
         lineHeight: 1.2,
       }
     case 'image':

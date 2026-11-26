@@ -292,3 +292,9 @@ describe('createObject sizes', () => {
     expect(t.fontSize * (25.4 / 72) * 1.2).toBeLessThanOrEqual(t.height + 1e-9)
   })
 })
+
+// R5.AC4
+it('new text is centred', () => {
+  const t = createObject('text', newDoc({ widthMm: 30, heightMm: 12 }).label)
+  expect(t.type === 'text' && t.align).toBe('center')
+})
