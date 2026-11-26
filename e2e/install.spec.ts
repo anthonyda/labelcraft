@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { openPanel, status } from './helpers.ts'
+import { isPhone, openPanel, status } from './helpers.ts'
 
 /* Install as an app (R30). */
 
@@ -55,7 +55,7 @@ test('service worker is registered', async ({ page }) => {
 test('Install app opens the help dialog', async ({ page }) => {
   await openPanel(page, 'Labels')
   await page
-    .getByRole('button', { name: 'Install', exact: true })
+    .getByRole('button', { name: 'Install app', exact: true })
     .filter({ visible: true })
     .first()
     .click()
@@ -64,3 +64,20 @@ test('Install app opens the help dialog', async ({ page }) => {
   await dialog.getByRole('button', { name: 'Done' }).click()
   await expect(dialog).toBeHidden()
 })
+
+// R30.AC4: the Labels row stays on one line, with or without the text.
+for (const width of [900, 1000, 1280]) {
+  test(`no horizontal scroll at ${width} px`, async ({ page }) => {
+    test.skip(isPhone(page), 'desktop toolbar')
+    await page.setViewportSize({ width, height: 800 })
+    const overflow = await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth -
+        document.documentElement.clientWidth,
+    )
+    expect(overflow).toBeLessThanOrEqual(0)
+    await expect(
+      page.getByRole('button', { name: 'Install app', exact: true }),
+    ).toBeVisible()
+  })
+}

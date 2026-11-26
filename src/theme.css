@@ -729,7 +729,7 @@ button.toggle-on {
 }
 
 /* The Labels row stays on one line on narrow desktops: icon only. */
-@media (max-width: 960px) {
+@media (max-width: 999px) {
   .desktop .install-text {
     position: absolute;
     width: 1px;

@@ -17,9 +17,9 @@ export function InstallButton() {
         onClick={async () => {
           if (!(await promptInstall())) setHelp(true)
         }}
-        aria-label="Install"
+        aria-label="Install app"
       >
-        <span className="install-text">Install</span>
+        <span className="install-text">Install app</span>
       </Button>
       <Modal
         open={help}
