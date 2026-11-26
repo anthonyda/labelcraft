@@ -196,6 +196,8 @@ test('objects outside the label are outlined and warned about', async ({
   await clickAt(page, TEXT)
   await expect(status(page)).toContainText('text at')
   await openPanel(page, 'Properties')
+  // Fixed-size text (Fit to box would grow it with the box, R5.AC6).
+  await props(page).getByLabel('Fit to box').uncheck()
   await props(page).getByLabel('Height (mm)').fill('30')
   await expect(status(page)).toContainText('× 30.0 mm')
   await page.waitForTimeout(300)

@@ -62,6 +62,10 @@ test('selects with a drag box', async ({ page }) => {
 
 // R4.AC2: move by dragging
 test('moves an object by dragging', async ({ page }) => {
+  // Magnet off: this checks plain dragging (the magnet is R26).
+  await page.evaluate(() => localStorage.setItem('labelcraft.magnet', 'off'))
+  await page.reload()
+  await expect(status(page)).toContainText('2 objects')
   const s = await screen(page, QR)
   await drag(page, s, { x: -8 * s.scale, y: 0 }) // 8 printer px left
   await expect(status(page)).toContainText('qr at 18.0, 1.0 mm')

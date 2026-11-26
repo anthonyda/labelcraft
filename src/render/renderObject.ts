@@ -6,7 +6,7 @@
  * bitmaps, so the editor shows exactly what will print (C7).
  */
 import Konva from 'konva'
-import { textFontPt } from './textFit'
+import { drawFitted } from './textFit'
 import type { ImageObject, LabelObject, TextObject } from '../model/types'
 import { mmToPx, ptToPx } from '../model/units'
 import {
@@ -79,12 +79,29 @@ const objectNodes = async (
       await document.fonts
         .load(`${textFontStyle(o)} 16px "${o.fontFamily}"`)
         .catch(() => [])
+      // R5.AC6: fitted text is drawn by its ink, filling the box.
+      if (o.autoSize) {
+        return [
+          new Konva.Shape({
+            width: w,
+            height: h,
+            sceneFunc: (ctx) =>
+              drawFitted(
+                (ctx as unknown as { _context: CanvasRenderingContext2D })
+                  ._context,
+                o,
+                w,
+                h,
+              ),
+          }),
+        ]
+      }
       return [
         new Konva.Text({
           width: w,
           text: o.text,
           fontFamily: o.fontFamily,
-          fontSize: ptToPx(textFontPt(o, w, h, dpi), dpi),
+          fontSize: ptToPx(o.fontSize, dpi),
           fontStyle: textFontStyle(o),
           textDecoration: o.underline ? 'underline' : '',
           align: o.align,

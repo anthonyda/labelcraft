@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createObject, newDoc } from '../model/factory'
 import type { TextObject } from '../model/types'
 import { renderLabel } from './renderLabel'
-import { fitFontPt, textFontPt } from './textFit'
+import { drawFitted, fitFontPt, textFontPt } from './textFit'
 
 const text = (patch: Partial<TextObject> = {}): TextObject => ({
   ...(createObject(
@@ -19,7 +19,7 @@ describe('fit to box', () => {
     const small = fitFontPt(o, 100, 40, 203)
     const big = fitFontPt(o, 200, 80, 203)
     expect(big).toBeGreaterThan(small)
-    expect((small * 2) % 1).toBe(0)
+    expect((small * 2) % 1).toBe(0) // shown in half points
   })
 
   it('is limited by height for short text, width for long text', () => {
@@ -40,6 +40,41 @@ describe('fit to box', () => {
     const one = fitFontPt(text({ text: 'Ab' }), 400, 80, 203)
     const two = fitFontPt(text({ text: 'Ab\nAb' }), 400, 80, 203)
     expect(two).toBeLessThan(one)
+  })
+
+  it('fills the box with ink: no padding on the limiting side', () => {
+    for (const [t, w, h] of [
+      ['Miaou', 400, 100],
+      ['Miaou', 100, 400],
+      ['Ab\nCd', 300, 300],
+    ] as const) {
+      const c = document.createElement('canvas')
+      c.width = w
+      c.height = h
+      drawFitted(c.getContext('2d')!, text({ text: t }), w, h)
+      const d = c.getContext('2d')!.getImageData(0, 0, w, h).data
+      let x1: number = w,
+        y1: number = h,
+        x2 = -1,
+        y2 = -1
+      for (let y = 0; y < h; y++)
+        for (let x = 0; x < w; x++)
+          if (d[(y * w + x) * 4 + 3] > 0) {
+            x1 = Math.min(x1, x)
+            x2 = Math.max(x2, x)
+            y1 = Math.min(y1, y)
+            y2 = Math.max(y2, y)
+          }
+      // Inside the box, and filling it along one side within ~2 %.
+      expect(x1).toBeGreaterThanOrEqual(0)
+      expect(y1).toBeGreaterThanOrEqual(0)
+      const fillW = (x2 - x1 + 1) / w
+      const fillH = (y2 - y1 + 1) / h
+      expect(Math.max(fillW, fillH)).toBeGreaterThan(0.97)
+      // Centred vertically, and horizontally for centred text.
+      expect(Math.abs(y1 - (h - 1 - y2))).toBeLessThanOrEqual(3)
+      expect(Math.abs(x1 - (w - 1 - x2))).toBeLessThanOrEqual(3)
+    }
   })
 
   it('uses its own size when off', () => {
