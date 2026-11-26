@@ -21,6 +21,7 @@ import { CLEAR, rollColorOf } from '../model/rollColors'
 import { renderFrame } from '../render/frame'
 import { textFontPt } from '../render/textFit'
 import { inkOutsideBox } from '../render/inkBounds'
+import { inkRect } from './inkRect'
 import { snapBox } from './snap'
 import { useMagnet } from './useMagnet'
 import { useGrid } from './useGrid'
@@ -436,6 +437,7 @@ export function EditorCanvas({
       return
     }
     const rectOf = (n: Konva.Node) =>
+      inkRect(n) ??
       n.getClientRect({ relativeTo: layer, skipStroke: true, skipShadow: true })
     const others = stage
       .find('.object')
@@ -579,7 +581,11 @@ export function EditorCanvas({
         onMouseUp={onStageUp}
         onTouchEnd={onStageUp}
       >
-        <Layer imageSmoothingEnabled={false}>
+        {/* R4.AC11: smooth when a dot is smaller than a device pixel, so
+            1-dot lines don't vanish; sharp dots from 1:1 up. */}
+        <Layer
+          imageSmoothingEnabled={scale * (window.devicePixelRatio || 1) < 1}
+        >
           <Rect
             name="label"
             width={label.width}

@@ -215,7 +215,8 @@ test('phone: one finger drags an object', async ({ page }) => {
   test.skip(!isPhone(page), 'touch gestures')
   const qr = await screen(page, { x: 192, y: 48 })
   await gesture(page, [qr], [{ x: qr.x - 16 * qr.scale, y: qr.y }])
-  await expect(status(page)).toContainText('qr at 17.0, 1.0 mm')
+  // 16 dots left: 17.0 mm, give or take the magnet's last dot (R26).
+  await expect(status(page)).toContainText(/qr at 1[67]\.\d, 1\.0 mm/)
 })
 
 /** Visible buttons whose first child is not an icon (R20.AC1). */

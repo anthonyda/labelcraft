@@ -2,9 +2,10 @@ import { expect, test, type Page } from '@playwright/test'
 import { openPanel, screen, status } from './helpers.ts'
 
 /*
- * Magnet (R26). The QR code sits at dots (152, 8), 80 × 80; the label is
- * 240 dots wide, so moving the QR 7 dots right leaves its right edge 1 dot
- * from the label's right edge: the magnet pulls it the last dot.
+ * Magnet (R26). The QR code sits at dots (152, 8), 80 × 80: 29 modules of
+ * 2 dots, so its ink runs from dot 163 to 221 (R26.AC1 snaps ink, not the
+ * box). The label is 240 dots wide: moving it 18 dots right leaves its ink
+ * 1 dot from the edge, and the magnet pulls it the last dot (x 171 dots).
  */
 const QR = { x: 192, y: 48 }
 
@@ -34,9 +35,9 @@ test('snaps to the label edge; Alt or the switch moves freely', async ({
   await openPanel(page, 'Edit')
   await expect(magnet(page)).toHaveAttribute('aria-pressed', 'true')
 
-  await dragQr(page, 7)
-  // Snapped: right edge on 240 → left at 160 dots = 20.0 mm.
-  await expect(status(page)).toContainText('qr at 20.0, 1.0 mm')
+  await dragQr(page, 18)
+  // Snapped: ink edge on 240 → box left at 171 dots = 21.4 mm.
+  await expect(status(page)).toContainText('qr at 21.4, 1.0 mm')
 
   await openPanel(page, 'Edit')
   await page.getByRole('button', { name: 'Undo', exact: true }).click()
@@ -46,8 +47,8 @@ test('snaps to the label edge; Alt or the switch moves freely', async ({
   await openPanel(page, 'Edit')
   await magnet(page).click()
   await expect(magnet(page)).toHaveAttribute('aria-pressed', 'false')
-  await dragQr(page, 7)
-  await expect(status(page)).toContainText('qr at 19.9, 1.0 mm')
+  await dragQr(page, 18)
+  await expect(status(page)).toContainText('qr at 21.3, 1.0 mm')
 
   // Remembered.
   await page.reload()
@@ -57,8 +58,8 @@ test('snaps to the label edge; Alt or the switch moves freely', async ({
 
 test('Alt moves freely for one drag', async ({ page, isMobile }) => {
   test.skip(isMobile, 'keyboard')
-  await dragQr(page, 7, true)
-  await expect(status(page)).toContainText('qr at 19.9, 1.0 mm')
+  await dragQr(page, 18, true)
+  await expect(status(page)).toContainText('qr at 21.3, 1.0 mm')
 })
 
 // R29: the grid is shown in the editor only.
