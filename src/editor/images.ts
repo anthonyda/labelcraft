@@ -73,3 +73,24 @@ export const imageObjectFromFile = async (
     y: (label.heightMm - height) / 2,
   }
 }
+
+/** The picture's own width ÷ height (R6.AC3). */
+export const imageRatio = (src: string): Promise<number> =>
+  new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () =>
+      img.naturalWidth && img.naturalHeight
+        ? resolve(img.naturalWidth / img.naturalHeight)
+        : reject(new Error('Image has no size.'))
+    img.onerror = () => reject(new Error('Image could not be loaded.'))
+    img.src = src
+  })
+
+/** Height for `ratio` keeping width and centre (R6.AC3). */
+export const withRatio = (
+  o: { x: number; y: number; width: number; height: number },
+  ratio: number,
+): { y: number; height: number } => {
+  const height = Math.round((o.width / ratio) * 100) / 100
+  return { y: Math.round((o.y + (o.height - height) / 2) * 100) / 100, height }
+}

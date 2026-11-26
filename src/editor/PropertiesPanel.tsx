@@ -32,7 +32,12 @@ import {
   TextField,
 } from './fields'
 import { FONT_FAMILIES } from './fonts'
-import { IMAGE_ACCEPT, imageObjectFromFile } from './images'
+import {
+  IMAGE_ACCEPT,
+  imageObjectFromFile,
+  imageRatio,
+  withRatio,
+} from './images'
 import { FramePicker } from './FramePicker'
 import { RollOffer } from './RollOffer'
 import { useEditorState, useEditorStore } from './useEditor'
@@ -257,6 +262,21 @@ function ObjectFields({ o }: { o: LabelObject }) {
           <>
             <Button icon="image" onClick={() => fileRef.current?.click()}>
               Replace image…
+            </Button>
+            {/* R6.AC3: back to the picture's own proportions. */}
+            <Button
+              icon="fit"
+              onClick={async () => {
+                try {
+                  const ratio = await imageRatio(o.src)
+                  set(withRatio(o, ratio))
+                  setError(undefined)
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : String(err))
+                }
+              }}
+            >
+              Original proportions
             </Button>
             <input
               ref={fileRef}

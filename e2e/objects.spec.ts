@@ -154,6 +154,14 @@ test('adds images from a file and from the clipboard', async ({ page }) => {
     'threshold',
   )
   await expect(props(page).getByLabel('Threshold')).toHaveValue('128')
+
+  // R6.AC3: squash it, then restore the picture's 2:1 proportions.
+  await props(page).getByLabel('Height (mm)').fill('4')
+  await expect(status(page)).toContainText('19.2 × 4.0 mm')
+  await props(page)
+    .getByRole('button', { name: 'Original proportions' })
+    .click()
+  await expect(status(page)).toContainText('19.2 × 9.6 mm')
   // A slider from Lighter to Darker; one undo step per drag.
   const slider = props(page).getByRole('slider', { name: /Threshold/ })
   await slider.fill('200')

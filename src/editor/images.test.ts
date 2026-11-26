@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fitImageMm } from './images'
+import { fitImageMm, withRatio } from './images'
 
 const label = { widthMm: 50, heightMm: 30, dpi: 203 }
 
@@ -20,5 +20,15 @@ describe('fitImageMm', () => {
   it('handles a zero-height image without dividing by zero', () => {
     const s = fitImageMm(10, 0, label)
     expect(Number.isFinite(s.width) && Number.isFinite(s.height)).toBe(true)
+  })
+})
+
+// R6.AC3
+describe('withRatio', () => {
+  it('keeps width and centre, sets the height for the ratio', () => {
+    const r = withRatio({ x: 2, y: 1, width: 20, height: 4 }, 2)
+    expect(r).toEqual({ y: -2, height: 10 })
+    // centre stays at y = 3
+    expect(r.y + r.height / 2).toBe(3)
   })
 })
