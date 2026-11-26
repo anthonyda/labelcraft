@@ -39,6 +39,7 @@ import {
   withRatio,
 } from './images'
 import { FramePicker } from './FramePicker'
+import { RollColorPicker } from './RollColorPicker'
 import { RollOffer } from './RollOffer'
 import { useEditorState, useEditorStore } from './useEditor'
 
@@ -166,6 +167,7 @@ function LabelSetupFields() {
         disabled={!!model}
         onChange={(v) => store.setLabel({ dpi: v })}
       />
+      <RollColorPicker />
       <FramePicker />
       <RollOffer />
       {overflow && (

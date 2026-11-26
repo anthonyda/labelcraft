@@ -5,14 +5,25 @@
  */
 import type Konva from 'konva'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Image, Layer, Line, Rect, Stage, Transformer } from 'react-konva'
+import {
+  Image,
+  Layer,
+  Line,
+  Rect,
+  Shape,
+  Stage,
+  Transformer,
+} from 'react-konva'
 import { boundingBox } from '../model/ops'
 import type { LabelObject, TextObject } from '../model/types'
 import { labelSizePx, mmToPx, ptToPx, pxToMm } from '../model/units'
+import { CLEAR, rollColorOf } from '../model/rollColors'
 import { renderFrame } from '../render/frame'
 import { inkOutsideBox } from '../render/inkBounds'
 import { snapBox } from './snap'
 import { useMagnet } from './useMagnet'
+import { useGrid } from './useGrid'
+import { gridLineMm, gridStepMm } from './grid'
 import { objectPixelBox } from '../render/renderObject'
 import { useScreenScale } from '../ui/calibration'
 import { COARSE_POINTER_QUERY, useMediaQuery } from '../ui/useMediaQuery'
@@ -28,11 +39,40 @@ import { clampZoom, scaleToZoom, zoomToScale, type Zoom } from './zoom'
 /** Minimum screen px around the label. */
 export const CANVAS_PADDING = 16
 
+/** Grid dots (R29.AC2): visible on white, coloured and clear rolls. */
+const GRID_COLOR = 'rgba(0, 64, 192, 0.55)'
+
 /** Magnet guide lines (R26.AC2). */
 const SNAP_COLOR = '#ff7a45'
 
 /** Outline of objects that go past the label edge (R19.AC1). */
 const OUTSIDE_COLOR = '#dc2626'
+
+/** R28.AC2: an 8 px checkerboard for clear rolls. */
+let checker: HTMLCanvasElement | undefined
+const checkerboard = (): HTMLCanvasElement => {
+  if (!checker) {
+    checker = document.createElement('canvas')
+    checker.width = checker.height = 16
+    const ctx = checker.getContext('2d')!
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, 16, 16)
+    ctx.fillStyle = '#e3e6eb'
+    ctx.fillRect(0, 0, 8, 8)
+    ctx.fillRect(8, 8, 8, 8)
+  }
+  return checker
+}
+
+/** R28.AC2: the label's fill for its roll colour; squares keep screen size. */
+const rollFill = (color: string, scale: number) =>
+  color === CLEAR
+    ? {
+        fillPatternImage: checkerboard() as unknown as HTMLImageElement,
+        fillPatternScale: { x: 1 / scale, y: 1 / scale },
+        fillPatternRepeat: 'repeat',
+      }
+    : { fill: color }
 
 type Band = { x1: number; y1: number; x2: number; y2: number }
 
@@ -382,6 +422,7 @@ export function EditorCanvas({
   // R26: magnet. Snap the dragged object to the label's and other objects'
   // edges and centres, and show what it snapped to.
   const magnet = useMagnet()
+  const grid = useGrid()
   const [guides, setGuides] = useState<{ x: number[]; y: number[] }>()
   const snapDrag = (e: Konva.KonvaEventObject<DragEvent>) => {
     const node = e.target
@@ -518,6 +559,8 @@ export function EditorCanvas({
       data-origin-x={origin.x}
       data-origin-y={origin.y}
       data-outside={outside.join(' ')}
+      data-roll-color={rollColorOf(doc.label)}
+      data-grid={grid ? 'on' : 'off'}
     >
       <Stage
         ref={stageRef}
@@ -539,11 +582,41 @@ export function EditorCanvas({
             name="label"
             width={label.width}
             height={label.height}
-            fill="#fff"
+            {...rollFill(rollColorOf(doc.label), scale)}
             shadowColor="#000"
             shadowOpacity={0.25}
             shadowBlur={8 / scale}
           />
+          {/* R29: dotted grid, a guide only (not printed, no clicks). */}
+          {grid && (
+            <Shape
+              name="grid"
+              listening={false}
+              sceneFunc={(ctx) => {
+                const dotsPerMm = dpi / 25.4
+                const step = gridStepMm(scale * dotsPerMm)
+                const xs = gridLineMm(doc.label.widthMm, step)
+                const ys = gridLineMm(doc.label.heightMm, step)
+                const r = 1.3 / scale
+                ctx.fillStyle = GRID_COLOR
+                for (let i = 0; i < xs.length; i++) {
+                  for (let j = 0; j < ys.length; j++) {
+                    const big = i % 5 === 0 && j % 5 === 0
+                    const rr = big ? r * 1.7 : r
+                    ctx.beginPath()
+                    ctx.arc(
+                      xs[i] * dotsPerMm,
+                      ys[j] * dotsPerMm,
+                      rr,
+                      0,
+                      Math.PI * 2,
+                    )
+                    ctx.fill()
+                  }
+                }
+              }}
+            />
+          )}
           {doc.objects.map((o) => (
             <ObjectNode
               key={o.id}

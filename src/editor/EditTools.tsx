@@ -1,6 +1,7 @@
 /** Editing tool groups shared by the desktop toolbar and the phone Edit sheet (T3.4). */
 import { useScreenScale } from '../ui/calibration'
 import { setMagnet, useMagnet } from './useMagnet'
+import { setGrid, useGrid } from './useGrid'
 import { CalibrateDialog } from '../ui/CalibrateDialog'
 import { Button, Icon, type IconName } from '../ui/icons'
 import { useEditorState, useEditorStore } from './useEditor'
@@ -31,6 +32,7 @@ export function EditTools({
   const none = store.selection.length === 0
   const { calibrated } = useScreenScale()
   const magnet = useMagnet()
+  const grid = useGrid()
   const [calibrating, setCalibrating] = useState(false)
   const button = (
     name: string,
@@ -85,6 +87,20 @@ export function EditTools({
             onClick={() => setMagnet(!magnet)}
           >
             Magnet
+          </Button>
+        </div>
+        {/* R29.AC1: dotted grid on or off. */}
+        <div className="group" role="group" aria-label="Grid">
+          <Button
+            icon="grid"
+            aria-pressed={grid}
+            className={grid ? 'toggle-on' : undefined}
+            title={
+              grid ? 'Grid on: dots every millimetre (not printed)' : 'Grid off'
+            }
+            onClick={() => setGrid(!grid)}
+          >
+            Grid
           </Button>
         </div>
         <div className="group" role="group" aria-label="Zoom">

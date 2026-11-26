@@ -26,6 +26,8 @@ export type LabelSetup = {
   turned?: boolean
   /** Frame around the label (R23); missing = none. */
   frame?: LabelFrame
+  /** Roll colour (R28): `#rrggbb` or `clear`; missing = white. */
+  color?: string
 }
 
 export type FrameDesign =

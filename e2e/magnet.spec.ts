@@ -60,3 +60,17 @@ test('Alt moves freely for one drag', async ({ page, isMobile }) => {
   await dragQr(page, 7, true)
   await expect(status(page)).toContainText('qr at 19.9, 1.0 mm')
 })
+
+// R29: the grid is shown in the editor only.
+test('grid on and off; remembered', async ({ page }) => {
+  const canvas = page.getByTestId('editor-canvas')
+  await expect(canvas).toHaveAttribute('data-grid', 'off')
+  await openPanel(page, 'Edit')
+  const grid = page.getByRole('button', { name: 'Grid', exact: true })
+  await expect(grid).toHaveAttribute('aria-pressed', 'false')
+  await grid.click()
+  await expect(grid).toHaveAttribute('aria-pressed', 'true')
+  await expect(canvas).toHaveAttribute('data-grid', 'on')
+  await page.reload()
+  await expect(canvas).toHaveAttribute('data-grid', 'on')
+})

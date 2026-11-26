@@ -1,4 +1,5 @@
 import { FRAME_IDS } from './frames'
+import { isRollColor } from './rollColors'
 import {
   DOC_VERSION,
   OBJECT_TYPES,
@@ -46,6 +47,7 @@ export const parseDoc = (data: unknown): LabelDoc => {
     (label.size !== undefined && typeof label.size !== 'string') ||
     (label.turned !== undefined && typeof label.turned !== 'boolean') ||
     (label.frame !== undefined && !isFrame(label.frame)) ||
+    (label.color !== undefined && !isRollColor(label.color)) ||
     !Array.isArray(d.objects)
   ) {
     throw new Error('The file is not a labelcraft label.')

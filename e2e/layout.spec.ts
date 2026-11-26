@@ -223,6 +223,8 @@ const buttonsWithoutIcon = (page: Page) =>
   page.evaluate(() =>
     Array.from(document.querySelectorAll('button'))
       .filter((b) => b.offsetParent !== null)
+      // R28.AC1: a colour swatch is its own icon (named by aria-label).
+      .filter((b) => !b.classList.contains('swatch'))
       .filter((b) => {
         const first = b.firstElementChild
         return !(
