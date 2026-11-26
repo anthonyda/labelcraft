@@ -278,6 +278,15 @@ function AboutText() {
   return (
     <>
       Independent project, not affiliated with or endorsed by NIIMBOT. ·{' '}
+      {/* R24.AC7: credit the printer library. */}
+      Printing by{' '}
+      <a
+        href="https://github.com/MultiMote/niimbluelib"
+        data-testid="lib-credit"
+      >
+        niimbluelib
+      </a>{' '}
+      ·{' '}
       <a
         className="build"
         href={`https://github.com/anthonyda/labelcraft/commit/${__BUILD_COMMIT__}`}

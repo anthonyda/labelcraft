@@ -78,7 +78,20 @@ function PrinterButton({ onClick }: { onClick: () => void }) {
           ? (printer.deviceName ?? 'Connected')
           : 'Not connected'
   return (
-    <button type="button" className="printer-button" onClick={onClick}>
+    <button
+      type="button"
+      // R24.AC8: green when connected, red when not; plain for the emulator.
+      className={`printer-button ${
+        printer.status === 'connecting'
+          ? ''
+          : connected
+            ? printer.transport === 'emulator'
+              ? ''
+              : 'is-connected'
+            : 'is-disconnected'
+      }`.trim()}
+      onClick={onClick}
+    >
       <Icon name="plug" />
       <span className="btn-text">Printer: {text}</span>
       {model?.source === 'chosen' && printer.status !== 'connecting' && (

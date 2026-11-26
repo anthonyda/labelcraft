@@ -231,6 +231,29 @@ button.primary:not(:disabled):active {
   font-weight: 600;
 }
 
+/* R24.AC8: printer connection at a glance (white text >= 4.5:1). */
+.app-header button.printer-button.is-connected {
+  background: #15803d;
+  border-color: #15803d;
+  color: #fff;
+}
+
+.app-header button.printer-button.is-disconnected {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  color: #fff;
+}
+
+@media (hover: hover) {
+  .app-header button.printer-button.is-connected:not(:disabled):hover {
+    background-color: #166534;
+  }
+
+  .app-header button.printer-button.is-disconnected:not(:disabled):hover {
+    background-color: #991b1b;
+  }
+}
+
 .app-header button {
   background: var(--header-btn);
   border-color: var(--header-border);
