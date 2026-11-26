@@ -1,12 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
-  <style>
-    .s { stroke: #1f2937; }
-    .f { fill: #1f2937; }
-    @media (prefers-color-scheme: dark) {
-      .s { stroke: #f3f4f6; }
-      .f { fill: #f3f4f6; }
-    }
-  </style>
-  <path class="s" stroke-width="1.8" d="M4 5h16v9l-5 5H4z M20 14c-3 0-5 2-5 5 M8 9h8 M8 12h5"/>
-  <path class="f" fill-opacity="0.25" d="M15 19c0-2.5 2-5 5-5z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <rect width="24" height="24" rx="5" fill="#ff7a45"/>
+  <g transform="translate(2.4 2.4) scale(0.8)" fill="none" stroke="#2a0d00" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke-width="2.2" d="M4 5h16v9l-5 5H4z M20 14c-3 0-5 2-5 5 M8 9h8 M8 12h5"/>
+    <path fill="#2a0d00" fill-opacity="0.25" stroke="none" d="M15 19c0-2.5 2-5 5-5z"/>
+  </g>
 </svg>

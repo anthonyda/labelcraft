@@ -349,3 +349,23 @@ test('theme switch cycles and is remembered', async ({ page }) => {
   await page.getByRole('button', { name: /^Theme:/ }).click()
   expect(await theme()).toBe('auto')
 })
+
+// R25.AC1, AC4: one orange in both themes; favicon on the same orange tile.
+test('same orange in light and dark; favicon tile', async ({
+  page,
+  request,
+}) => {
+  const printBg = () =>
+    page
+      .getByRole('button', { name: 'Print…' })
+      .evaluate((b) => getComputedStyle(b).backgroundColor)
+  const button = page.getByRole('button', { name: /^Theme:/ })
+  await button.click() // light
+  const light = await printBg()
+  await button.click() // dark
+  expect(await printBg()).toBe(light)
+  expect(light).toBe('rgb(255, 122, 69)')
+  const href = await page.locator('link[rel="icon"]').getAttribute('href')
+  const svg = await (await request.get(new URL(href!, page.url()).href)).text()
+  expect(svg.toLowerCase()).toContain('#ff7a45')
+})

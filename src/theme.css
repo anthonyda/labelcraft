@@ -22,10 +22,12 @@
   --panel: #ffffff;
   --canvas: #e4f0ff;
   --dots: #c3dafa;
-  /* #d63a00 on white text is 4.7:1 (R25.AC3). */
-  --accent: #d63a00;
-  --accent-hover: #b83200;
-  --accent-ink: #ffffff;
+  /* Same orange as the dark theme, dark text on it (R25.AC1). */
+  --accent: #ff7a45;
+  --accent-hover: #ff8f61;
+  --accent-ink: #2a0d00;
+  /* Orange for text and thin lines on light backgrounds (4.9:1 on white). */
+  --accent-strong: #c2410c;
   --selection: #ffe4d6;
   --selection-ink: #7a2100;
   --chip: #eaf2ff;
@@ -65,6 +67,7 @@
     --accent: #ff7a45;
     --accent-hover: #ff9466;
     --accent-ink: #2a0d00;
+    --accent-strong: #ff7a45;
     --selection: #3a1a0b;
     --selection-ink: #ffc7a8;
     --chip: #12213f;
@@ -104,6 +107,7 @@
   --accent: #ff7a45;
   --accent-hover: #ff9466;
   --accent-ink: #2a0d00;
+  --accent-strong: #ff7a45;
   --selection: #3a1a0b;
   --selection-ink: #ffc7a8;
   --chip: #12213f;
@@ -343,8 +347,8 @@ button.primary:not(:disabled):active {
 }
 
 .frame-designs button.active {
-  border-color: var(--accent);
-  box-shadow: inset 0 0 0 1px var(--accent);
+  border-color: var(--accent-strong);
+  box-shadow: inset 0 0 0 1px var(--accent-strong);
   background: var(--selection);
   color: var(--selection-ink);
 }
@@ -428,7 +432,7 @@ dialog {
 }
 
 .bottom-bar button.active {
-  color: var(--accent);
+  color: var(--accent-strong);
   box-shadow: inset 0 3px 0 var(--accent);
 }
 
@@ -438,7 +442,7 @@ dialog {
 
 /* Calibrate dialog outline */
 .calibrate-label {
-  border-color: var(--accent);
+  border-color: var(--accent-strong);
   background: var(--selection);
   color: var(--selection-ink);
 }
