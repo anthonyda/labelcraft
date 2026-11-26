@@ -490,3 +490,20 @@ dialog {
   letter-spacing: 0.06em;
   opacity: 1;
 }
+
+/* Threshold slider (R6.AC2) */
+.threshold-field label {
+  display: flex;
+  justify-content: space-between;
+}
+
+.threshold-field output {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.threshold-field input[type='range'] {
+  width: 100%;
+  border: 0;
+  background: transparent;
+}

@@ -154,11 +154,13 @@ test('adds images from a file and from the clipboard', async ({ page }) => {
     'threshold',
   )
   await expect(props(page).getByLabel('Threshold')).toHaveValue('128')
-  await expect(props(page).getByTestId('threshold-hint')).toContainText(
-    'Lower prints lighter, higher prints darker',
-  )
+  // A slider from Lighter to Darker; one undo step per drag.
+  const slider = props(page).getByRole('slider', { name: /Threshold/ })
+  await slider.fill('200')
+  await expect(slider).toHaveValue('200')
+  await expect(props(page).getByText('Lighter')).toBeVisible()
   await props(page).getByLabel('Black and white').selectOption('dither')
-  await expect(props(page).getByTestId('threshold-hint')).toHaveCount(0)
+  await expect(slider).toHaveCount(0)
 
   await page.evaluate(async (b64) => {
     const bytes = Uint8Array.from(atob(b64), (ch) => ch.charCodeAt(0))

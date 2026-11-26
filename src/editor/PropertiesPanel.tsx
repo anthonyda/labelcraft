@@ -286,26 +286,33 @@ function ObjectFields({ o }: { o: LabelObject }) {
               label="Black and white"
               value={o.mode}
               options={[
-                ['dither', 'Dithering (shades of grey)'],
-                ['threshold', 'Threshold (sharp black and white)'],
+                ['dither', 'Dithering (grey shades)'],
+                ['threshold', 'Threshold (sharp)'],
               ]}
               onChange={(mode) => set({ mode })}
             />
             {o.mode === 'threshold' && (
-              <NumberField
-                label="Threshold"
-                value={o.threshold}
-                min={1}
-                max={255}
-                step={1}
-                digits={0}
-                onChange={(threshold) => set({ threshold }, 'threshold')}
-              />
-            )}
-            {o.mode === 'threshold' && (
-              <p className="field-hint" data-testid="threshold-hint">
-                Lower prints lighter, higher prints darker (1–255, middle 128).
-              </p>
+              /* R6.AC2: threshold slider; dragging it is one undo step. */
+              <div className="field threshold-field">
+                <label htmlFor={`threshold-${o.id}`}>
+                  Threshold <output>{o.threshold}</output>
+                </label>
+                <input
+                  id={`threshold-${o.id}`}
+                  type="range"
+                  min={1}
+                  max={255}
+                  step={1}
+                  value={o.threshold}
+                  onChange={(e) =>
+                    set({ threshold: Number(e.target.value) }, 'threshold')
+                  }
+                />
+                <span className="scale-ends" aria-hidden="true">
+                  <span>Lighter</span>
+                  <span>Darker</span>
+                </span>
+              </div>
             )}
           </>
         )}
