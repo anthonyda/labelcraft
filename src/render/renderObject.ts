@@ -6,7 +6,7 @@
  * bitmaps, so the editor shows exactly what will print (C7).
  */
 import Konva from 'konva'
-import { drawFitted } from './textFit'
+import { drawFitted, stretchOf } from './textFit'
 import type { ImageObject, LabelObject, TextObject } from '../model/types'
 import { mmToPx, ptToPx } from '../model/units'
 import {
@@ -96,9 +96,12 @@ const objectNodes = async (
           }),
         ]
       }
+      // R5.AC7: squeeze or stretch; wraps at the stretched width.
+      const sx = stretchOf(o)
       return [
         new Konva.Text({
-          width: w,
+          width: w / sx,
+          scaleX: sx,
           text: o.text,
           fontFamily: o.fontFamily,
           fontSize: ptToPx(o.fontSize, dpi),

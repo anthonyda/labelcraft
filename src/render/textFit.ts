@@ -25,7 +25,12 @@ type FitInput = Pick<
   | 'lineHeight'
   | 'autoSize'
   | 'fontSize'
+  | 'stretch'
 >
+
+/** R5.AC7: horizontal scale of the letters. */
+export const stretchOf = (o: { stretch?: number }): number =>
+  o.stretch && o.stretch > 0 ? o.stretch : 1
 
 const fontStyle = (o: FitInput) =>
   [o.italic && 'italic', o.bold && 'bold'].filter(Boolean).join(' ')
@@ -81,6 +86,7 @@ export type FitLayout = {
 /** R5.AC6: size and place the lines in a w × h dot box. */
 export const fitLayout = (o: FitInput, w: number, h: number): FitLayout => {
   const lines = probeLines(o)
+  const sx = stretchOf(o)
   const pitch = o.lineHeight * PROBE_PX
   let top = Infinity
   let bottom = -Infinity
@@ -89,7 +95,7 @@ export const fitLayout = (o: FitInput, w: number, h: number): FitLayout => {
     if (!l.text.trim()) return
     top = Math.min(top, i * pitch - l.asc)
     bottom = Math.max(bottom, i * pitch + l.desc)
-    widest = Math.max(widest, l.left + l.right)
+    widest = Math.max(widest, (l.left + l.right) * sx)
   })
   if (!(widest > 0) || !(bottom > top)) return { px: 0, lines: [] }
   // A hair under the exact fit so rounding never clips the ink.
@@ -98,12 +104,12 @@ export const fitLayout = (o: FitInput, w: number, h: number): FitLayout => {
   return {
     px: PROBE_PX * k,
     lines: lines.map((l, i) => {
-      const inkW = (l.left + l.right) * k
+      const inkW = (l.left + l.right) * k * sx
       const inkLeft =
         o.align === 'left' ? 0 : o.align === 'right' ? w - inkW : (w - inkW) / 2
       return {
         text: l.text,
-        x: inkLeft + l.left * k,
+        x: inkLeft + l.left * k * sx,
         baseline: offsetY + i * pitch * k,
         inkLeft,
         inkRight: inkLeft + inkW,
@@ -128,7 +134,11 @@ export const drawFitted = (
   ctx.textBaseline = 'alphabetic'
   for (const l of layout.lines) {
     if (!l.text.trim()) continue
-    ctx.fillText(l.text, l.x, l.baseline)
+    ctx.save()
+    ctx.translate(l.x, l.baseline)
+    ctx.scale(stretchOf(o), 1)
+    ctx.fillText(l.text, 0, 0)
+    ctx.restore()
     if (o.underline) {
       ctx.fillRect(
         l.inkLeft,

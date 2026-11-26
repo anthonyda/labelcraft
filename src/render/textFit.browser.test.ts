@@ -77,6 +77,42 @@ describe('fit to box', () => {
     }
   })
 
+  // R5.AC7
+  it('letter width stretches the ink sideways only', () => {
+    const inkBox = (stretch: number) => {
+      const c = document.createElement('canvas')
+      c.width = 800
+      c.height = 100
+      drawFitted(
+        c.getContext('2d')!,
+        text({ text: 'Miaou', stretch }),
+        800,
+        100,
+      )
+      const d = c.getContext('2d')!.getImageData(0, 0, 800, 100).data
+      let x1 = 800
+      let x2 = -1
+      let rows = 0
+      for (let y = 0; y < 100; y++) {
+        let any = false
+        for (let x = 0; x < 800; x++) {
+          if (d[(y * 800 + x) * 4 + 3] > 0) {
+            any = true
+            x1 = Math.min(x1, x)
+            x2 = Math.max(x2, x)
+          }
+        }
+        if (any) rows++
+      }
+      return { width: x2 - x1 + 1, rows }
+    }
+    const normal = inkBox(1)
+    const wide = inkBox(1.5)
+    // Height-limited box: same height, 1.5 × the width.
+    expect(wide.rows).toBe(normal.rows)
+    expect(wide.width / normal.width).toBeCloseTo(1.5, 1)
+  })
+
   it('uses its own size when off', () => {
     expect(
       textFontPt(text({ autoSize: false, fontSize: 9 }), 400, 80, 203),

@@ -134,6 +134,8 @@ export type TextObject = ObjectBase & {
   lineHeight: number
   /** Fit to box (R5.AC6): drawn at the largest size that fits; missing = off. */
   autoSize?: boolean
+  /** Letter width (R5.AC7): horizontal scale, 0.5–2; missing = 1. */
+  stretch?: number
 }
 
 export type ImageMode = 'threshold' | 'dither'

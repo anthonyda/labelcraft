@@ -243,4 +243,10 @@ test('text size: fit to box, then slider', async ({ page }) => {
   await expect(size).toHaveValue(fitted)
   await slider.fill('12')
   await expect(size).toHaveValue('12')
+
+  // R5.AC7: letter width.
+  const lw = p.getByLabel('Letter width (%)')
+  await expect(lw).toHaveValue('100')
+  await p.getByLabel('Letter width slider').fill('150')
+  await expect(lw).toHaveValue('150')
 })
