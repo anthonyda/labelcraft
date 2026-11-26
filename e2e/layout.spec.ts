@@ -90,6 +90,7 @@ test('desktop: toolbar on top, properties beside the canvas', async ({
   const p = (await props.boundingBox())!
   expect(t.y + t.height).toBeLessThanOrEqual(c.y + 1)
   expect(p.x).toBeGreaterThanOrEqual(c.x + c.width - 1)
+  await expect(props.getByRole('heading', { name: 'Properties' })).toBeVisible()
 })
 
 // R15.AC2–AC3

@@ -467,6 +467,8 @@ export function PropertiesPanel() {
   )
   return (
     <aside className="properties" aria-label="Properties">
+      {/* Panel heading (desktop; the phone panel has its own title). */}
+      <h2 className="panel-title">Properties</h2>
       {selected.length === 1 ? (
         <ObjectFields key={selected[0].id} o={selected[0]} />
       ) : selected.length > 1 ? (

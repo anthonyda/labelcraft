@@ -555,3 +555,18 @@ button.toggle-on {
 .phone .frame-categories .chip {
   min-height: 44px;
 }
+
+/* Right panel heading, like the Layers heading */
+.properties .panel-title {
+  margin: 0 0 0.5rem;
+  padding-inline: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.sheet .properties .panel-title {
+  display: none;
+}
