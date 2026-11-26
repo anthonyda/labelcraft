@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { connectHint } from './connectHint'
+import { BLUETOOTH_LINK_HINT, connectHint } from './connectHint'
 
 // R2.AC6
 describe('connect hint', () => {
@@ -18,6 +18,19 @@ describe('connect hint', () => {
   it('says nothing for a cancelled picker', () => {
     expect(
       connectHint('User cancelled the requestDevice() chooser.', 'bluetooth'),
+    ).toBeUndefined()
+  })
+
+  // R2.AC8
+  it('explains Bluetooth link failures', () => {
+    expect(
+      connectHint('Connection Error: Connection attempt failed.', 'bluetooth'),
+    ).toBe(BLUETOOTH_LINK_HINT)
+    expect(
+      connectHint('NetworkError: GATT Server is disconnected.', 'bluetooth'),
+    ).toBe(BLUETOOTH_LINK_HINT)
+    expect(
+      connectHint('Connection Error: Connection attempt failed.', 'serial'),
     ).toBeUndefined()
   })
 })
