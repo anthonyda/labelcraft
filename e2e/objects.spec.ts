@@ -250,3 +250,36 @@ test('text size: fit to box, then slider', async ({ page }) => {
   await p.getByLabel('Letter width slider').fill('150')
   await expect(lw).toHaveValue('150')
 })
+
+// R31: bundled fonts, served by labelcraft itself.
+test('bundled fonts: grouped field, sample, drawn on the label', async ({
+  page,
+}) => {
+  const outside: string[] = []
+  page.on('request', (r) => {
+    if (!r.url().startsWith('http://localhost:4173')) outside.push(r.url())
+  })
+  await clickAt(page, TEXT)
+  await openPanel(page, 'Properties')
+  const font = props(page).getByLabel('Font')
+  await expect(font.locator('optgroup')).toHaveCount(8)
+  await font.selectOption('Bebas Neue')
+  await expect(page.getByTestId('font-sample')).toHaveCSS(
+    'font-family',
+    '"Bebas Neue"',
+  )
+  // The font file loads from labelcraft and the label is drawn with it.
+  await expect
+    .poll(() => page.evaluate(() => document.fonts.check('16px "Bebas Neue"')))
+    .toBe(true)
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        [...document.fonts].some(
+          (f) => f.family.includes('Bebas Neue') && f.status === 'loaded',
+        ),
+      ),
+    )
+    .toBe(true)
+  expect(outside).toEqual([])
+})

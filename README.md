@@ -33,7 +33,10 @@ nothing to download.
   edges and centres.
 - **Save and open** labels in the browser, export them as JSON files or PNG
   images, and import them again.
-- **Desktop and Android phones**, light and dark themes.
+- **24 bundled fonts** (sans, condensed, serif, rounded, handwriting,
+  monospace and pixel), so labels look the same on every device.
+- **Desktop and Android phones**, light and dark themes. Installable as an
+  app.
 
 ## Supported printers
 
@@ -94,6 +97,18 @@ npm run build      # production build in dist/
 ```
 
 Pushes to `main` are linted, tested, built and deployed to GitHub Pages.
+
+## Fonts
+
+The bundled fonts are served from this site through the
+[Fontsource](https://fontsource.org) packages and are licensed under the
+[SIL Open Font License 1.1](https://openfontlicense.org): Inter, Roboto, Open
+Sans, Montserrat, Lato, IBM Plex Sans, Roboto Condensed, Oswald, Bebas Neue,
+IBM Plex Sans Condensed, Merriweather, Playfair Display, IBM Plex Serif, Nunito,
+Fredoka, Lobster, Pacifico, Caveat, Patrick Hand, JetBrains Mono, Roboto Mono,
+IBM Plex Mono, Silkscreen and Press Start 2P. Each package includes its
+licence and copyright notice. IBM Plex is © IBM Corp., with Reserved Font
+Name "Plex".
 
 ## License
 

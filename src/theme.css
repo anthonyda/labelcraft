@@ -739,3 +739,14 @@ button.toggle-on {
     white-space: nowrap;
   }
 }
+
+/* Font sample under the Font field (R31.AC3) */
+.font-sample {
+  margin: 0.35rem 0 0;
+  font-size: 1.25rem;
+  line-height: 1.3;
+  color: var(--ink);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

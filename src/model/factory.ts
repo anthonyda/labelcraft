@@ -65,7 +65,8 @@ export const createObject = (
         ...textBox(),
         type,
         text: 'Text',
-        fontFamily: 'Arial',
+        // R31.AC4: a bundled font, the same on every device.
+        fontFamily: 'Inter',
         bold: false,
         italic: false,
         underline: false,

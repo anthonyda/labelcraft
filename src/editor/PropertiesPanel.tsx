@@ -31,7 +31,7 @@ import {
   SelectField,
   TextField,
 } from './fields'
-import { FONT_FAMILIES } from './fonts'
+import { FontField } from './FontField'
 import {
   IMAGE_ACCEPT,
   imageObjectFromFile,
@@ -208,10 +208,8 @@ function ObjectFields({ o }: { o: LabelObject }) {
               value={o.text}
               onChange={(text) => set({ text }, 'text')}
             />
-            <SelectField
-              label="Font"
+            <FontField
               value={o.fontFamily}
-              options={FONT_FAMILIES.map((f) => [f, f] as const)}
               onChange={(fontFamily) => set({ fontFamily })}
             />
             <TextSize o={o} onChange={(patch, key) => set(patch, key)} />
